@@ -838,6 +838,9 @@ export default function Editor({
         cellIndex 
       });
 
+      // Calculate the column number (for header text)
+      const columnNumber = cellIndex + 2; // +1 because we're adding after, +1 for 1-based numbering
+
       // Add a cell to each row
       const rows = table.rows;
       for (let i = 0; i < rows.length; i++) {
@@ -846,7 +849,11 @@ export default function Editor({
         
         // Create appropriate cell type (th for header, td for body)
         const newCell = isHeaderRow ? document.createElement("th") : document.createElement("td");
-        newCell.textContent = `New Cell`;
+        
+        // Set cell content based on whether it's a header or not
+        newCell.textContent = isHeaderRow ? `Header ${columnNumber}` : `New Cell`;
+        
+        // Add styling
         newCell.style.border = "1px solid #ccc";
         newCell.style.padding = "8px";
         newCell.style.minWidth = "50px";
