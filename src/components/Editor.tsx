@@ -1095,6 +1095,10 @@ export default function Editor({
       }
     };
 
+    // Add this variable for tracking hover timeout
+    let hoverTimeout: number | null = null;
+
+    // Update the handleMouseMove function to debounce the hover detection
     const handleMouseMove = (e: MouseEvent) => {
       if (resizing && selectedImageElement && currentResizeHandle) {
         e.preventDefault();
@@ -1102,55 +1106,85 @@ export default function Editor({
         // Calculate how far we've moved from the starting position
         const deltaX = e.clientX - resizeStartPosition.x;
         const deltaY = e.clientY - resizeStartPosition.y;
-        const aspectRatio =
-          resizeStartDimensions.width / resizeStartDimensions.height;
+        const aspectRatio = resizeStartDimensions.width / resizeStartDimensions.height;
 
         // Calculate new width based on the resize handle being used
         let newWidth = resizeStartDimensions.width;
 
+        // Use a more precise and smoother calculation for each handle type
         switch (currentResizeHandle) {
           case "right":
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
+            break;
           case "bottom-right":
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
+            break;
           case "top-right":
-            newWidth = resizeStartDimensions.width + deltaX;
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
             break;
           case "left":
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
+            break;
           case "bottom-left":
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
+            break;
           case "top-left":
-            newWidth = resizeStartDimensions.width - deltaX;
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
             break;
           case "top":
-            // For top handle, maintain aspect ratio
-            newWidth = resizeStartDimensions.width + -deltaY * aspectRatio;
+            // For top handle, maintain aspect ratio based on vertical movement
+            newWidth = Math.max(resizeStartDimensions.width - deltaY * aspectRatio, 50);
             break;
           case "bottom":
-            // For bottom handle, maintain aspect ratio
-            newWidth = resizeStartDimensions.width + deltaY * aspectRatio;
+            // For bottom handle, maintain aspect ratio based on vertical movement
+            newWidth = Math.max(resizeStartDimensions.width + deltaY * aspectRatio, 50);
             break;
         }
 
-        // Ensure minimum dimensions
-        const minSize = 50;
-        newWidth = Math.max(newWidth, minSize);
-
-        // Update image dimensions
-        selectedImageElement.style.width = `${newWidth}px`;
+        // Set a percentage-based width for more predictable resizing
+        const containerWidth = editorRef.current?.clientWidth || 1;
+        const widthPercentage = (newWidth / containerWidth) * 100;
+        
+        // Update the image with percentage-based width
+        selectedImageElement.style.width = `${widthPercentage}%`;
         selectedImageElement.style.height = "auto"; // Maintain aspect ratio
 
-        // Update resize handle positions
-        updateResizeHandlePositions();
-
-        // Update content to save changes
-        updateContent();
+        // Use requestAnimationFrame for smoother updates
+        window.requestAnimationFrame(() => {
+          // Update resize handle positions
+          updateResizeHandlePositions();
+        });
       }
 
-      // Show resize handles when hovering over an image
+      // Show resize handles when hovering over an image with debouncing
       if (!resizing) {
         const target = e.target as HTMLElement;
 
         if (target.tagName === "IMG") {
+          // Clear any existing timeout
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+          }
+          
+          // Set the image element immediately
           setSelectedImageElement(target as HTMLImageElement);
-          addResizeHandles();
+          
+          // But add a small delay before showing handles to prevent flickering
+          hoverTimeout = setTimeout(() => {
+            addResizeHandles();
+          }, 100);
+        } else if (target.className !== 'resize-handle') {
+          // When moving away from image and not onto a handle, set a timeout to hide handles
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+          }
+          
+          hoverTimeout = setTimeout(() => {
+            // Only hide if we're not currently resizing
+            if (!resizing) {
+              removeResizeHandles();
+            }
+          }, 300);
         }
       }
     };
@@ -1161,8 +1195,11 @@ export default function Editor({
         setResizing(false);
         setCurrentResizeHandle(null);
 
-        // Final update to content
-        updateContent();
+        // Use a small delay before updating content to ensure all DOM updates are complete
+        setTimeout(() => {
+          // Update content storage after resize is complete
+          updateContent();
+        }, 50);
       }
     };
 
@@ -1190,6 +1227,7 @@ export default function Editor({
         handleContainer.style.height = `${imageRect.height}px`;
         handleContainer.style.pointerEvents = "none"; // Let clicks pass through to the image
         handleContainer.style.zIndex = "999";
+        handleContainer.style.transition = "all 0.05s ease"; // Add smooth transition for repositioning
 
         // Define handle positions
         const handlePositions: Record<string, HandlePosition> = {
@@ -1214,9 +1252,9 @@ export default function Editor({
           handle.style.backgroundColor = "#1976d2";
           handle.style.border = "2px solid white";
           handle.style.borderRadius = "50%";
-          handle.style.cursor = `${handleName}-resize`;
           handle.style.pointerEvents = "auto"; // Make handles clickable
           handle.style.zIndex = "1000";
+          handle.style.cursor = `${handleName}-resize`; // Set appropriate cursor
 
           // Apply position
           Object.entries(position).forEach(([prop, value]) => {
@@ -1259,12 +1297,28 @@ export default function Editor({
     };
 
     const updateResizeHandlePositions = () => {
-      // This function ensures resize handles are always correctly positioned
-      // when the image dimensions or positions change
       if (selectedImageElement && editorRef.current && resizeHandlesVisible) {
-        // Simply remove and re-add the handles to update positions
-        removeResizeHandles();
-        addResizeHandles();
+        const handleContainer = document.querySelector('.resize-handles-container') as HTMLElement;
+        
+        if (handleContainer) {
+          // Get updated positions
+          const imageRect = selectedImageElement.getBoundingClientRect();
+          const editorRect = editorRef.current.getBoundingClientRect();
+          
+          // Update container position
+          handleContainer.style.top = `${
+            imageRect.top - editorRect.top + editorRef.current.scrollTop
+          }px`;
+          handleContainer.style.left = `${
+            imageRect.left - editorRect.left + editorRef.current.scrollLeft
+          }px`;
+          handleContainer.style.width = `${imageRect.width}px`;
+          handleContainer.style.height = `${imageRect.height}px`;
+        } else {
+          // If container doesn't exist, re-create handles
+          removeResizeHandles();
+          addResizeHandles();
+        }
       }
     };
 
@@ -1309,6 +1363,11 @@ export default function Editor({
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
         window.removeEventListener("resize", handleWindowResize);
+        
+        // Also clear any pending timeouts
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+        }
       };
     }
   // Add the missing dependencies
