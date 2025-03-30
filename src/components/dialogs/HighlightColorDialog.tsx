@@ -1,59 +1,97 @@
-import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Tooltip } from "@mui/material";
-import { HighlightColorDialogProps } from "../interfaces";
+import { Box, Popover, Button } from "@mui/material";
 
-// Predefined highlight colors
+interface HighlightColorDialogProps {
+  open: boolean;
+  anchorEl: HTMLElement | null;
+  onClose: () => void;
+  onSelect: (color: string) => void;
+}
+
+// Predefined highlight colors in a 4x2 grid matching the image
 const HIGHLIGHT_COLORS = [
-  "#FFFF00", // Yellow
-  "#00FFFF", // Cyan
-  "#FF00FF", // Magenta
-  "#00FF00", // Lime
-  "#FF9900", // Orange
-  "#FF99CC", // Pink
-  "#99CCFF", // Light Blue
-  "#CCCCCC", // Light Grey
+  // Row 1
+  "#CD5C5C", // Indian Red
+  "#E9967A", // Dark Salmon
+  "#FFD700", // Gold
+  "#BDB76B", // Dark Khaki
+  // Row 2
+  "#3CB371", // Medium Sea Green
+  "#20B2AA", // Light Sea Green
+  "#87CEEB", // Sky Blue
+  "#DDA0DD", // Plum
 ];
 
-export default function HighlightColorDialog({ open, onClose, onSelect }: HighlightColorDialogProps) {
+export default function HighlightColorDialog({ open, anchorEl, onClose, onSelect }: HighlightColorDialogProps) {
   const handleColorSelect = (color: string) => {
     onSelect(color);
     onClose();
   };
   
+  const handleNoHighlight = () => {
+    onSelect("transparent");
+    onClose();
+  };
+  
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      aria-labelledby="highlight-color-dialog-title"
+    <Popover
+      open={open}
+      anchorEl={anchorEl}
+      onClose={onClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'center',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'center',
+      }}
+      PaperProps={{
+        sx: {
+          borderRadius: '8px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          padding: 0,
+          maxWidth: '245px',
+          overflow: 'visible'
+        }
+      }}
     >
-      <DialogTitle id="highlight-color-dialog-title">Highlight Color</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', pt: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: '180px' }}>
+        <Button 
+          fullWidth 
+          onClick={handleNoHighlight}
+          sx={{ 
+            justifyContent: 'center',
+            py: 1.5,
+            color: 'rgba(0,0,0,0.6)',
+            borderBottom: '1px solid rgba(0,0,0,0.1)',
+            borderRadius: 0,
+            textTransform: 'none',
+            fontWeight: 'normal'
+          }}
+        >
+          No highlight
+        </Button>
+        
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', p: 1 }}>
           {HIGHLIGHT_COLORS.map((color) => (
-            <Tooltip key={color} title={color} arrow>
-              <Box
-                onClick={() => handleColorSelect(color)}
-                sx={{
-                  width: 36,
-                  height: 36,
-                  backgroundColor: color,
-                  borderRadius: 1,
-                  cursor: "pointer",
-                  border: "1px solid #ccc",
-                  transition: "all 0.2s",
-                  "&:hover": {
-                    transform: "scale(1.05)",
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                    border: "1px solid #999",
-                  },
-                }}
-              />
-            </Tooltip>
+            <Box
+              key={color}
+              onClick={() => handleColorSelect(color)}
+              sx={{
+                width: '100%',
+                paddingBottom: '100%', // Creates a square
+                backgroundColor: color,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                border: '1px solid rgba(0,0,0,0.1)',
+                '&:hover': {
+                  border: '1px solid rgba(0,0,0,0.3)',
+                }
+              }}
+            />
           ))}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </Popover>
   );
 } 

@@ -129,15 +129,10 @@ export default function Editor({
   );
   const codeMenuOpen = Boolean(codeMenuAnchorEl);
   const [savedSelection, setSavedSelection] = useState<Range | null>(null);
-  const [fontColorDialogOpen, setFontColorDialogOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentHighlightColor, setCurrentHighlightColor] = useState<
-    string | null
-  >(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentFontColor, setCurrentFontColor] = useState<string | null>(null);
-  const [highlightColorDialogOpen, setHighlightColorDialogOpen] =
-    useState(false);
+  const [fontColorDialogAnchorEl, setFontColorDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const fontColorDialogOpen = Boolean(fontColorDialogAnchorEl);
+  const [highlightColorDialogAnchorEl, setHighlightColorDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const highlightColorDialogOpen = Boolean(highlightColorDialogAnchorEl);
   const [fontSizeMenuAnchorEl, setFontSizeMenuAnchorEl] =
     useState<null | HTMLElement>(null);
   const fontSizeMenuOpen = Boolean(fontSizeMenuAnchorEl);
@@ -1468,142 +1463,24 @@ export default function Editor({
     return false;
   };
 
-  const handleHighlightColorClick = () => {
+  const handleHighlightColorClick = (event: React.MouseEvent<HTMLElement>) => {
     saveSelection();
     saveSelectionRange();
-    setHighlightColorDialogOpen(true);
+    setHighlightColorDialogAnchorEl(event.currentTarget);
   };
 
-  const applyDirectHighlight = (color: string): boolean => {
-    try {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
-        return false;
-
-      const range = selection.getRangeAt(0);
-
-      // Handle already highlighted text
-      const parentSpan = findAncestorByTagName(
-        range.commonAncestorContainer,
-        "span"
-      );
-      if (
-        parentSpan &&
-        parentSpan.style.backgroundColor &&
-        parentSpan.style.backgroundColor !== "" &&
-        range.startContainer === range.endContainer
-      ) {
-        // Just change the background color of the existing span
-        parentSpan.style.backgroundColor = color;
-        return true;
-      }
-
-      // Create a new span with the highlight color
-      const highlightSpan = document.createElement("span");
-      highlightSpan.style.backgroundColor = color;
-
-      // Apply the formatting
-      range.surroundContents(highlightSpan);
-
-      // Restore selection to new span
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      return true;
-    } catch (error) {
-      console.error("Error applying highlight:", error);
-      return false;
-    }
+  const handleHighlightColorClose = () => {
+    setHighlightColorDialogAnchorEl(null);
   };
 
-  const handleHighlightColorSelect = (color: string) => {
-    setCurrentHighlightColor(color);
-
-    // Try to apply highlight with our modern method first
-    let success = false;
-
-    if (restoreSelectionRange()) {
-      success = applyDirectHighlight(color);
-    }
-
-    if (!success) {
-      // Fallback to execCommand
-      if (restoreSelection()) {
-        document.execCommand("hiliteColor", false, color);
-      }
-    }
-
-    updateContent();
-    setHighlightColorDialogOpen(false);
-  };
-
-  const handleFontColorClick = () => {
+  const handleFontColorClick = (event: React.MouseEvent<HTMLElement>) => {
     saveSelection();
     saveSelectionRange();
-    setFontColorDialogOpen(true);
+    setFontColorDialogAnchorEl(event.currentTarget);
   };
 
-  const applyDirectFontColor = (color: string): boolean => {
-    try {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
-        return false;
-
-      const range = selection.getRangeAt(0);
-
-      // Handle already colored text
-      const parentSpan = findAncestorByTagName(
-        range.commonAncestorContainer,
-        "span"
-      );
-      if (
-        parentSpan &&
-        parentSpan.style.color &&
-        parentSpan.style.color !== "" &&
-        range.startContainer === range.endContainer
-      ) {
-        // Just change the color of the existing span
-        parentSpan.style.color = color;
-        return true;
-      }
-
-      // Create a new span with the font color
-      const colorSpan = document.createElement("span");
-      colorSpan.style.color = color;
-
-      // Apply the formatting
-      range.surroundContents(colorSpan);
-
-      // Restore selection to new span
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      return true;
-    } catch (error) {
-      console.error("Error applying font color:", error);
-      return false;
-    }
-  };
-
-  const handleFontColorSelect = (color: string) => {
-    setCurrentFontColor(color);
-
-    // Try to apply font color with our modern method first
-    let success = false;
-
-    if (restoreSelectionRange()) {
-      success = applyDirectFontColor(color);
-    }
-
-    if (!success) {
-      // Fallback to execCommand
-      if (restoreSelection()) {
-        document.execCommand("foreColor", false, color);
-      }
-    }
-
-    updateContent();
-    setFontColorDialogOpen(false);
+  const handleFontColorClose = () => {
+    setFontColorDialogAnchorEl(null);
   };
 
   const handleFontSizeClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -1667,6 +1544,142 @@ export default function Editor({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Add back the highlight color handling functions
+  const applyDirectHighlight = (color: string): boolean => {
+    try {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+        return false;
+
+      const range = selection.getRangeAt(0);
+
+      // Handle already highlighted text
+      const parentSpan = findAncestorByTagName(
+        range.commonAncestorContainer,
+        "span"
+      );
+      if (
+        parentSpan &&
+        parentSpan.style.backgroundColor &&
+        parentSpan.style.backgroundColor !== "" &&
+        range.startContainer === range.endContainer
+      ) {
+        // Just change the background color of the existing span
+        parentSpan.style.backgroundColor = color;
+        return true;
+      }
+
+      // Create a new span with the highlight color
+      const highlightSpan = document.createElement("span");
+      highlightSpan.style.backgroundColor = color;
+
+      // Apply the formatting
+      range.surroundContents(highlightSpan);
+
+      // Restore selection to new span
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return true;
+    } catch (error) {
+      console.error("Error applying highlight:", error);
+      return false;
+    }
+  };
+
+  const handleHighlightColorSelect = (color: string) => {
+    // Try to apply highlight with our modern method first
+    let success = false;
+
+    if (restoreSelectionRange()) {
+      if (color === "transparent") {
+        // Remove highlight by applying removeFormat command
+        document.execCommand("removeFormat", false, "");
+        success = true;
+      } else {
+        success = applyDirectHighlight(color);
+      }
+    }
+
+    if (!success && color !== "transparent") {
+      // Fallback to execCommand
+      if (restoreSelection()) {
+        document.execCommand("hiliteColor", false, color);
+      }
+    }
+
+    updateContent();
+    handleHighlightColorClose();
+  };
+
+  // Add back the font color handling functions
+  const applyDirectFontColor = (color: string): boolean => {
+    try {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+        return false;
+
+      const range = selection.getRangeAt(0);
+
+      // Handle already colored text
+      const parentSpan = findAncestorByTagName(
+        range.commonAncestorContainer,
+        "span"
+      );
+      if (
+        parentSpan &&
+        parentSpan.style.color &&
+        parentSpan.style.color !== "" &&
+        range.startContainer === range.endContainer
+      ) {
+        // Just change the color of the existing span
+        parentSpan.style.color = color;
+        return true;
+      }
+
+      // Create a new span with the font color
+      const colorSpan = document.createElement("span");
+      colorSpan.style.color = color;
+
+      // Apply the formatting
+      range.surroundContents(colorSpan);
+
+      // Restore selection to new span
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      return true;
+    } catch (error) {
+      console.error("Error applying font color:", error);
+      return false;
+    }
+  };
+
+  const handleFontColorSelect = (color: string) => {
+    // Try to apply font color with our modern method first
+    let success = false;
+
+    if (restoreSelectionRange()) {
+      if (color === "currentColor") {
+        // Remove color formatting by applying removeFormat command
+        document.execCommand("removeFormat", false, "");
+        success = true;
+      } else {
+        success = applyDirectFontColor(color);
+      }
+    }
+
+    if (!success && color !== "currentColor") {
+      // Fallback to execCommand
+      if (restoreSelection()) {
+        document.execCommand("foreColor", false, color);
+      }
+    }
+
+    updateContent();
+    handleFontColorClose();
+  };
 
   return (
     <Box
@@ -1742,14 +1755,14 @@ export default function Editor({
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Text Color">
-            <IconButton size="small" onClick={handleFontColorClick}>
+          <Tooltip title="Font color">
+            <IconButton onClick={handleFontColorClick} size="small">
               <FormatColorTextIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Highlight Color">
-            <IconButton size="small" onClick={handleHighlightColorClick}>
+          <Tooltip title="Text highlight color">
+            <IconButton onClick={handleHighlightColorClick} size="small">
               <FormatColorFillIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -1988,13 +2001,15 @@ export default function Editor({
 
       <HighlightColorDialog
         open={highlightColorDialogOpen}
-        onClose={() => setHighlightColorDialogOpen(false)}
+        anchorEl={highlightColorDialogAnchorEl}
+        onClose={handleHighlightColorClose}
         onSelect={handleHighlightColorSelect}
       />
 
       <FontColorDialog
         open={fontColorDialogOpen}
-        onClose={() => setFontColorDialogOpen(false)}
+        anchorEl={fontColorDialogAnchorEl}
+        onClose={handleFontColorClose}
         onSelect={handleFontColorSelect}
       />
 
