@@ -827,8 +827,10 @@ export default function Editor({
       const rows = table.rows;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const newCell =
-          i === 0 ? document.createElement("th") : document.createElement("td");
+        const isHeaderRow = findAncestorByTagName(row, "thead") !== null || row.querySelector("th") !== null;
+        
+        // Create appropriate cell type (th for header, td for body)
+        const newCell = isHeaderRow ? document.createElement("th") : document.createElement("td");
         newCell.textContent = `New Cell`;
         newCell.style.border = "1px solid #ccc";
         newCell.style.padding = "8px";
@@ -836,7 +838,7 @@ export default function Editor({
         newCell.style.wordBreak = "break-word";
         newCell.style.verticalAlign = "top";
 
-        if (i === 0) {
+        if (isHeaderRow) {
           // Header cell styling
           newCell.style.backgroundColor = "#f5f5f5";
           newCell.style.fontWeight = "bold";
@@ -859,6 +861,8 @@ export default function Editor({
     if (selectedTableElement.table && selectedTableElement.row) {
       const table = selectedTableElement.table;
       const rowIndex = selectedTableElement.row.rowIndex;
+      const tbody = findAncestorByTagName(selectedTableElement.row, "tbody") as HTMLTableSectionElement;
+      const thead = table.querySelector("thead");
 
       // Create a new row
       const newRow = document.createElement("tr");
@@ -876,16 +880,31 @@ export default function Editor({
         newRow.appendChild(newCell);
       }
 
-      // Insert at the correct position
-      if (rowIndex >= 0 && rowIndex < table.rows.length) {
-        const nextRow = table.rows[rowIndex + 1];
-        if (nextRow) {
-          table.insertBefore(newRow, nextRow);
-        } else {
-          table.appendChild(newRow);
+      // Insert at the correct position based on whether the row is in thead or tbody
+      if (findAncestorByTagName(selectedTableElement.row, "thead")) {
+        // If in header, add to thead
+        if (thead) {
+          thead.appendChild(newRow);
         }
       } else {
-        table.appendChild(newRow);
+        // For tbody rows
+        if (tbody) {
+          // If the row is in tbody, insert relative to other tbody rows
+          if (rowIndex >= 0) {
+            const tbodyRowIndex = rowIndex - (thead ? thead.rows.length : 0);
+            const nextRow = tbodyRowIndex + 1 < tbody.rows.length ? tbody.rows[tbodyRowIndex + 1] : null;
+            if (nextRow) {
+              tbody.insertBefore(newRow, nextRow);
+            } else {
+              tbody.appendChild(newRow);
+            }
+          } else {
+            tbody.appendChild(newRow);
+          }
+        } else {
+          // If no tbody exists, append directly to table
+          table.appendChild(newRow);
+        }
       }
 
       updateContent();
