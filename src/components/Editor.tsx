@@ -819,13 +819,24 @@ export default function Editor({
   };
 
   const handleAddTablePartClick = () => {
+    if (!verifyTableSelection()) {
+      console.warn("No valid table element selected for add operation");
+      return;
+    }
     setAddTablePartDialogOpen(true);
   };
 
   const handleAddColumn = () => {
+    console.log("handleAddColumn called, selectedTableElement:", selectedTableElement);
+    
     if (selectedTableElement.table && selectedTableElement.cell) {
       const table = selectedTableElement.table;
       const cellIndex = selectedTableElement.cell.cellIndex;
+      
+      console.log("Adding column, details:", { 
+        tableRows: table.rows.length,
+        cellIndex 
+      });
 
       // Add a cell to each row
       const rows = table.rows;
@@ -862,11 +873,20 @@ export default function Editor({
   };
 
   const handleAddRow = () => {
+    console.log("handleAddRow called, selectedTableElement:", selectedTableElement);
+    
     if (selectedTableElement.table && selectedTableElement.row) {
       const table = selectedTableElement.table;
       const rowIndex = selectedTableElement.row.rowIndex;
       const tbody = findAncestorByTagName(selectedTableElement.row, "tbody") as HTMLTableSectionElement;
       const thead = table.querySelector("thead");
+      
+      console.log("Adding row, details:", { 
+        tableRows: table.rows.length,
+        rowIndex,
+        hasTbody: !!tbody,
+        hasThead: !!thead
+      });
 
       // Create a new row
       const newRow = document.createElement("tr");
@@ -978,6 +998,14 @@ export default function Editor({
         const table = row ? findAncestorByTagName(row, "table") : null;
 
         if (cell && row && table) {
+          console.log("Table cell clicked:", { 
+            table, 
+            row, 
+            cell, 
+            cellIndex: (cell as HTMLTableCellElement).cellIndex,
+            rowIndex: (row as HTMLTableRowElement).rowIndex
+          });
+          
           setSelectedTableElement({
             table: table as HTMLTableElement,
             row: row as HTMLTableRowElement,
@@ -1335,13 +1363,39 @@ export default function Editor({
     setTableContextMenuAnchorEl(null);
   };
 
+  // Add this function to verify if the table selection exists and is valid
+  const verifyTableSelection = (): boolean => {
+    // First check if table elements exist
+    if (!selectedTableElement.table || !selectedTableElement.row || !selectedTableElement.cell) {
+      console.warn("No table element selected!");
+      return false;
+    }
+    
+    // Then verify that table elements are still connected to DOM
+    const isTableInDOM = document.contains(selectedTableElement.table);
+    const isRowInDOM = document.contains(selectedTableElement.row);
+    const isCellInDOM = document.contains(selectedTableElement.cell);
+    
+    if (!isTableInDOM || !isRowInDOM || !isCellInDOM) {
+      console.warn("Table elements not in DOM anymore!");
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Update the context menu handlers to use this check
   const handleContextAddRow = () => {
-    handleAddRow();
+    if (verifyTableSelection()) {
+      handleAddRow();
+    }
     handleTableContextMenuClose();
   };
 
   const handleContextAddColumn = () => {
-    handleAddColumn();
+    if (verifyTableSelection()) {
+      handleAddColumn();
+    }
     handleTableContextMenuClose();
   };
 
@@ -1909,8 +1963,16 @@ export default function Editor({
       <AddTablePartDialog
         open={addTablePartDialogOpen}
         onClose={() => setAddTablePartDialogOpen(false)}
-        onAddColumn={handleAddColumn}
-        onAddRow={handleAddRow}
+        onAddColumn={() => {
+          if (verifyTableSelection()) {
+            handleAddColumn();
+          }
+        }}
+        onAddRow={() => {
+          if (verifyTableSelection()) {
+            handleAddRow();
+          }
+        }}
       />
 
       <TableContextMenu
