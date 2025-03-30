@@ -1,3 +1,8 @@
+/**
+ * React Rich Text Editor
+ * Styled Components
+ * @author Tanmoy Bhadra
+ */
 import { styled } from "@mui/material/styles";
 import { Box } from "@mui/material";
 

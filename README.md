@@ -1,4 +1,10 @@
-# React + TypeScript + Vite
+# React Rich Text Editor
+
+**Author:** Tanmoy Bhadra
+
+A comprehensive rich text editor built with React and Material-UI.
+
+## Features
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

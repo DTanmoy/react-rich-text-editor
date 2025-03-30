@@ -1,3 +1,8 @@
+/**
+ * React Rich Text Editor
+ * App Component
+ * @author Tanmoy Bhadra
+ */
 import Box from "@mui/material/Box";
 import Editor from "./components/Editor";
 import { useState } from "react";

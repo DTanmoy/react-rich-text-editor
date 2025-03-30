@@ -1,4 +1,10 @@
 /**
+ * React Rich Text Editor
+ * Dialog Components Index
+ * @author Tanmoy Bhadra
+ */
+
+/**
  * @file Exports all dialog components used in the rich text editor
  * @module dialogs
  */

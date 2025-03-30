@@ -1,4 +1,10 @@
 /**
+ * React Rich Text Editor
+ * TypeScript Interfaces
+ * @author Tanmoy Bhadra
+ */
+
+/**
  * Props for the main rich text Editor component
  * @interface EditorProps
  */

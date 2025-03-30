@@ -1,14 +1,7 @@
 /**
- * Rich Text Editor Component
- *
- * Features include:
- * - Basic text formatting (bold, italic, underline, etc.)
- * - Lists (bullet and numbered)
- * - Links and images
- * - Tables with formatting options
- * - Code blocks with syntax highlighting
- * - Image resizing with drag handles (positioned at corners and edges)
- * - Color controls for text and highlighting
+ * React Rich Text Editor
+ * Main Editor Component
+ * @author Tanmoy Bhadra
  */
 
 import {
@@ -28,6 +21,7 @@ import {
   ListItemIcon,
   ListItemText,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import FormatBoldIcon from "@mui/icons-material/FormatBold";
 import FormatItalicIcon from "@mui/icons-material/FormatItalic";
@@ -95,6 +89,7 @@ export default function Editor({
   fontFamily,
   onSend,
 }: EditorProps) {
+  const theme = useTheme();
   const [isExpanded, setIsExpanded] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -152,6 +147,13 @@ export default function Editor({
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    quote: false
+  });
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -299,6 +301,47 @@ export default function Editor({
     }
   };
 
+  // Add the format status check function here
+  const checkFormatStatus = () => {
+    if (!editorRef.current) return;
+    
+    // Check if the current selection is inside a blockquote
+    const isInBlockquote = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return false;
+      
+      const range = selection.getRangeAt(0);
+      let node: Node | null = range.commonAncestorContainer;
+      
+      // If it's a text node, get its parent
+      if (node.nodeType === 3 && node.parentNode) {
+        node = node.parentNode;
+      }
+      
+      // Check if the node is or is inside a blockquote
+      while (node && node !== editorRef.current) {
+        if (node.nodeName.toLowerCase() === 'blockquote') {
+          return true;
+        }
+        if (node.parentNode) {
+          node = node.parentNode;
+        } else {
+          break;
+        }
+      }
+      
+      return false;
+    };
+    
+    setActiveFormats({
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+      strikethrough: document.queryCommandState('strikeThrough'),
+      quote: isInBlockquote()
+    });
+  };
+
   const execCommand = (
     command: string,
     value: string = "",
@@ -443,11 +486,25 @@ export default function Editor({
     }
   };
 
-  const handleBold = () => execCommand("bold", "", "Bold");
-  const handleItalic = () => execCommand("italic", "", "Italic");
-  const handleUnderline = () => execCommand("underline", "", "Underline");
-  const handleStrikethrough = () =>
+  const handleBold = () => {
+    execCommand("bold", "", "Bold");
+    setActiveFormats(prev => ({ ...prev, bold: !prev.bold }));
+  };
+  
+  const handleItalic = () => {
+    execCommand("italic", "", "Italic");
+    setActiveFormats(prev => ({ ...prev, italic: !prev.italic }));
+  };
+  
+  const handleUnderline = () => {
+    execCommand("underline", "", "Underline");
+    setActiveFormats(prev => ({ ...prev, underline: !prev.underline }));
+  };
+  
+  const handleStrikethrough = () => {
     execCommand("strikeThrough", "", "Strikethrough");
+    setActiveFormats(prev => ({ ...prev, strikethrough: !prev.strikethrough }));
+  };
 
   const handleBulletList = () => {
     // Try to apply list formatting with our custom method
@@ -475,6 +532,33 @@ export default function Editor({
 
   const applyListFormatting = (listType: "ol" | "ul"): boolean => {
     try {
+      // Check if editor is empty or has no real content
+      if (editorRef.current && !editorRef.current.textContent?.trim()) {
+        // Create a list item with placeholder text in an empty editor
+        const listElement = document.createElement(listType);
+        const listItem = document.createElement("li");
+        listItem.appendChild(document.createTextNode("\u200B")); // Add zero-width space to allow cursor positioning
+        listItem.style.minHeight = "1.5em"; // Ensure the list item has height
+        listElement.appendChild(listItem);
+        
+        // Insert the list structure
+        editorRef.current.innerHTML = "";
+        editorRef.current.appendChild(listElement);
+        
+        // Set cursor in the empty list item
+        const range = document.createRange();
+        range.setStart(listItem, 0);
+        range.collapse(true);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        
+        updateContent();
+        return true;
+      }
+      
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return false;
 
@@ -491,6 +575,9 @@ export default function Editor({
         // If we have a text selection, use it as the list item content
         if (!range.collapsed) {
           listItem.appendChild(range.extractContents());
+        } else {
+          // Add a zero-width space to allow cursor positioning in empty list items
+          listItem.appendChild(document.createTextNode("\u200B"));
         }
 
         listElement.appendChild(listItem);
@@ -592,7 +679,61 @@ export default function Editor({
     }
   };
 
-  const handleQuote = () => execCommand("formatBlock", "<blockquote>", "Quote");
+  // Update the handleQuote function to properly handle quote removal when already in a quote
+  const handleQuote = () => {
+    // If we're already in a quote, we need to unset it
+    if (activeFormats.quote) {
+      // Find the blockquote element
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        let node = range.commonAncestorContainer;
+        
+        // If it's a text node, get its parent
+        if (node.nodeType === 3 && node.parentNode) {
+          node = node.parentNode;
+        }
+        
+        // Find the blockquote
+        let blockquote = null;
+        let current = node;
+        while (current && current !== editorRef.current) {
+          if (current.nodeName.toLowerCase() === 'blockquote') {
+            blockquote = current;
+            break;
+          }
+          if (current.parentNode) {
+            current = current.parentNode;
+          } else {
+            break;
+          }
+        }
+        
+        // If we found a blockquote, replace it with its contents
+        if (blockquote && blockquote.parentNode) {
+          // Create a temporary container
+          const p = document.createElement('p');
+          
+          // Move all children from blockquote to the new paragraph
+          while (blockquote.firstChild) {
+            p.appendChild(blockquote.firstChild);
+          }
+          
+          // Replace blockquote with paragraph
+          blockquote.parentNode.replaceChild(p, blockquote);
+          
+          // Update content
+          updateContent();
+        }
+      }
+    } else {
+      // Apply blockquote formatting
+      execCommand("formatBlock", "<blockquote>", "Quote");
+    }
+    
+    // Toggle quote state - this will be corrected by checkFormatStatus on next selection change
+    setActiveFormats(prev => ({ ...prev, quote: !prev.quote }));
+  };
 
   const handleCodeButtonClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
     setCodeMenuAnchorEl(event.currentTarget);
@@ -613,7 +754,7 @@ export default function Editor({
       // Create a code element and apply it
       const codeElement = document.createElement("code");
       codeElement.style.fontFamily = "monospace";
-      codeElement.style.backgroundColor = "#f5f5f5";
+      codeElement.style.backgroundColor = theme.palette.action.hover;
       codeElement.style.padding = "2px 4px";
       codeElement.style.borderRadius = "3px";
 
@@ -643,7 +784,7 @@ export default function Editor({
 
     // Build the code block
     preElement.appendChild(codeElement);
-    preElement.style.backgroundColor = "#f5f5f5";
+    preElement.style.backgroundColor = theme.palette.action.hover;
     preElement.style.padding = "16px";
     preElement.style.borderRadius = "4px";
     preElement.style.overflow = "auto";
@@ -772,7 +913,7 @@ export default function Editor({
     const tableElement = document.createElement("table");
     tableElement.style.width = "100%";
     tableElement.style.borderCollapse = "collapse";
-    tableElement.style.border = "1px solid #ccc";
+    tableElement.style.border = `1px solid ${theme.palette.divider}`;
     tableElement.style.margin = "16px 0";
 
     // Create header row
@@ -782,9 +923,9 @@ export default function Editor({
     for (let i = 0; i < columns; i++) {
       const th = document.createElement("th");
       th.textContent = `Header ${i + 1}`;
-      th.style.border = "1px solid #ccc";
+      th.style.border = `1px solid ${theme.palette.divider}`;
       th.style.padding = "8px";
-      th.style.backgroundColor = "#f5f5f5";
+      th.style.backgroundColor = theme.palette.action.hover;
       th.style.fontWeight = "bold";
       th.style.textAlign = "left";
       th.style.minWidth = "50px";
@@ -805,7 +946,7 @@ export default function Editor({
       for (let j = 0; j < columns; j++) {
         const cell = document.createElement("td");
         cell.textContent = `Cell ${i + 1},${j + 1}`;
-        cell.style.border = "1px solid #ccc";
+        cell.style.border = `1px solid ${theme.palette.divider}`;
         cell.style.padding = "8px";
         cell.style.minWidth = "50px";
         cell.style.wordBreak = "break-word";
@@ -884,7 +1025,7 @@ export default function Editor({
         newCell.textContent = isHeaderRow ? `Header ${columnNumber}` : `New Cell`;
         
         // Add styling
-        newCell.style.border = "1px solid #ccc";
+        newCell.style.border = `1px solid ${theme.palette.divider}`;
         newCell.style.padding = "8px";
         newCell.style.minWidth = "50px";
         newCell.style.wordBreak = "break-word";
@@ -892,7 +1033,7 @@ export default function Editor({
 
         if (isHeaderRow) {
           // Header cell styling
-          newCell.style.backgroundColor = "#f5f5f5";
+          newCell.style.backgroundColor = theme.palette.action.hover;
           newCell.style.fontWeight = "bold";
           newCell.style.textAlign = "left";
         }
@@ -935,7 +1076,7 @@ export default function Editor({
       for (let i = 0; i < columnCount; i++) {
         const newCell = document.createElement("td");
         newCell.textContent = `New Cell`;
-        newCell.style.border = "1px solid #ccc";
+        newCell.style.border = `1px solid ${theme.palette.divider}`;
         newCell.style.padding = "8px";
         newCell.style.minWidth = "50px";
         newCell.style.wordBreak = "break-word";
@@ -1008,6 +1149,9 @@ export default function Editor({
 
     const handleEditorClick = (e: Event) => {
       const target = e.target as HTMLElement;
+
+      // Check format status when clicking in editor
+      checkFormatStatus();
 
       // Handle clicks on images
       if (target.tagName === "IMG") {
@@ -1268,8 +1412,8 @@ export default function Editor({
           handle.style.position = "absolute";
           handle.style.width = "12px";
           handle.style.height = "12px";
-          handle.style.backgroundColor = "#1976d2";
-          handle.style.border = "2px solid white";
+          handle.style.backgroundColor = theme.palette.primary.main;
+          handle.style.border = `2px solid ${theme.palette.common.white}`;
           handle.style.borderRadius = "50%";
           handle.style.pointerEvents = "auto"; // Make handles clickable
           handle.style.zIndex = "1000";
@@ -1349,6 +1493,10 @@ export default function Editor({
       editorRef.current.addEventListener("mousedown", handleMouseDown);
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("selectionchange", handleSelectionChange);
+
+      // Update format status on initial load
+      checkFormatStatus();
 
       // Update size of resize handles when window resizes
       const handleWindowResize = () => {
@@ -1381,6 +1529,7 @@ export default function Editor({
         }
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("selectionchange", handleSelectionChange);
         window.removeEventListener("resize", handleWindowResize);
         
         // Also clear any pending timeouts
@@ -1389,8 +1538,7 @@ export default function Editor({
         }
       };
     }
-  // Add the missing dependencies
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Add the new dependency
   }, [
     resizing,
     selectedImageElement,
@@ -1403,7 +1551,8 @@ export default function Editor({
     handleItalic,
     handleUnderline,
     handleLink,
-    updateContent
+    updateContent,
+    checkFormatStatus // Add the new function as a dependency
   ]);
 
   const handleImageResize = (width: string) => {
@@ -1936,11 +2085,11 @@ export default function Editor({
     // Focus the editor to ensure we have focus
     editorRef.current.focus();
     
-    // Get current selection - we need to be more careful with selection handling
-    let selection = window.getSelection();
+    // Try to get the current selection
+    const selection = window.getSelection();
     let range: Range | null = null;
     
-    // First try to get the current selection
+    // Get current selection - we need to be careful with selection handling
     if (selection && selection.rangeCount > 0) {
       range = selection.getRangeAt(0);
       
@@ -1952,7 +2101,11 @@ export default function Editor({
           inEditor = true;
           break;
         }
-        node = node.parentNode;
+        if (node.parentNode) {
+          node = node.parentNode;
+        } else {
+          break;
+        }
       }
       
       // If selection is not in editor, we need to create a new range
@@ -1975,8 +2128,10 @@ export default function Editor({
       }
       
       // Apply the new range to selection
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     }
     
     // Helper function to get file type icon
@@ -2003,7 +2158,7 @@ export default function Editor({
     const fragment = document.createDocumentFragment();
     let lastElement: HTMLElement | null = null;
     
-    attachmentsToInsert.forEach((attachment, index) => {
+    attachmentsToInsert.forEach((attachment) => {
       // Create a span to hold the icon and link
       const attachmentSpan = document.createElement('span');
       attachmentSpan.style.display = 'inline-flex';
@@ -2027,7 +2182,7 @@ export default function Editor({
       linkElement.title = "Click to download, double-click to remove"; // Add tooltip for clarity
       
       // Add specific styling for attachment links
-      linkElement.style.color = "#1976d2";
+      linkElement.style.color = theme.palette.primary.main;
       linkElement.style.textDecoration = "none";
       linkElement.style.fontWeight = "500";
       
@@ -2063,22 +2218,14 @@ export default function Editor({
       // Add to fragment
       fragment.appendChild(attachmentSpan);
       
-      // Add a space after (except for the last one)
-      if (index < attachmentsToInsert.length - 1) {
-        fragment.appendChild(document.createTextNode(" "));
-      }
-      
       // Keep track of the last element for cursor positioning
       lastElement = attachmentSpan;
     });
     
-    // Now, get the selection again (it might have changed)
-    selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      range = selection.getRangeAt(0);
-      
-      // Insert the fragment at the current position
-      range.deleteContents();
+    // Insert the fragment at the current cursor position
+    if (selection && range) {
+      // We won't delete the content for better insertion
+      // range.deleteContents();
       range.insertNode(fragment);
       
       // Add a space after the last attachment
@@ -2102,11 +2249,17 @@ export default function Editor({
     updateContent();
   };
 
+  // Add a selection change handler - around line ~880, in the useEffect that adds event listeners
+  // Add event listener to update format status when selection changes
+  const handleSelectionChange = () => {
+    checkFormatStatus();
+  };
+
   return (
     <Box
       sx={{
         width: width,
-        border: `1px solid ${borderColor || "#e0e0e0"}`,
+        border: `1px solid ${borderColor || theme.palette.divider}`,
         borderRadius: "8px",
         overflow: "hidden",
         position: "relative",
@@ -2116,34 +2269,54 @@ export default function Editor({
         <Toolbar
           variant="dense"
           sx={{
-            borderBottom: "1px solid #e0e0e0",
+            borderBottom: `1px solid ${theme.palette.divider}`,
             minHeight: "auto",
             padding: "4px",
             display: "flex",
             flexWrap: "wrap",
-            backgroundColor: "#f9f9f9",
+            backgroundColor: theme.palette.background.paper,
           }}
         >
           <Tooltip title="Bold">
-            <IconButton size="small" onClick={handleBold}>
+            <IconButton 
+              size="small" 
+              onClick={handleBold}
+              color={activeFormats.bold ? "primary" : "default"}
+              sx={activeFormats.bold ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+            >
               <FormatBoldIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Italic">
-            <IconButton size="small" onClick={handleItalic}>
+            <IconButton 
+              size="small" 
+              onClick={handleItalic}
+              color={activeFormats.italic ? "primary" : "default"}
+              sx={activeFormats.italic ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+            >
               <FormatItalicIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Underline">
-            <IconButton size="small" onClick={handleUnderline}>
+            <IconButton 
+              size="small" 
+              onClick={handleUnderline}
+              color={activeFormats.underline ? "primary" : "default"}
+              sx={activeFormats.underline ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+            >
               <FormatUnderlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Strikethrough">
-            <IconButton size="small" onClick={handleStrikethrough}>
+            <IconButton 
+              size="small" 
+              onClick={handleStrikethrough}
+              color={activeFormats.strikethrough ? "primary" : "default"}
+              sx={activeFormats.strikethrough ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+            >
               <FormatStrikethroughIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -2163,7 +2336,12 @@ export default function Editor({
           </Tooltip>
 
           <Tooltip title="Quote">
-            <IconButton size="small" onClick={handleQuote}>
+            <IconButton 
+              size="small" 
+              onClick={handleQuote}
+              color={activeFormats.quote ? "primary" : "default"}
+              sx={activeFormats.quote ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+            >
               <FormatQuoteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -2388,7 +2566,7 @@ export default function Editor({
             <IconButton
               size="small"
               onClick={toggleExpanded}
-              sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+              sx={{ backgroundColor: theme.palette.background.paper + '80' }}
             >
               {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>

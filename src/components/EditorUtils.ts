@@ -1,4 +1,10 @@
 /**
+ * React Rich Text Editor
+ * Editor Utility Functions
+ * @author Tanmoy Bhadra
+ */
+
+/**
  * Escape HTML characters to prevent XSS attacks
  * 
  * @param {string} text - The raw text to be escaped

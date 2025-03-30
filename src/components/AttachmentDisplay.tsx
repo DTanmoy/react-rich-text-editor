@@ -1,4 +1,9 @@
-import React from 'react';
+/**
+ * React Rich Text Editor
+ * Attachment Display Component
+ * @author Tanmoy Bhadra
+ */
+import React from "react";
 import { Box, Paper, Typography, styled, IconButton, Tooltip } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
