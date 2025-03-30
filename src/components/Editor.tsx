@@ -260,9 +260,28 @@ export default function Editor({
     }
   };
 
+  // Add this helper function before updateContent function
+  const getCleanContent = (editorElement: HTMLElement): string => {
+    // Create a clone of the editor content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = editorElement.innerHTML;
+    
+    // Remove all resize handles and containers from the clone
+    const resizeHandles = tempDiv.querySelectorAll('.resize-handles-container, .resize-handle');
+    resizeHandles.forEach(handle => {
+      if (handle.parentNode) {
+        handle.parentNode.removeChild(handle);
+      }
+    });
+    
+    return tempDiv.innerHTML;
+  };
+
   const updateContent = () => {
     if (editorRef.current && onChange) {
-      const content = editorRef.current.innerHTML;
+      // Get the content without the resize handles
+      const content = getCleanContent(editorRef.current);
+      
       onChange(content);
       console.log("Content updated:", content);
     }
