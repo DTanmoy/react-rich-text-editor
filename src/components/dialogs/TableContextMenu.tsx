@@ -1,59 +1,57 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { TableContextMenuProps } from "../interfaces";
+import AddIcon from "@mui/icons-material/Add";
 
-export default function TableContextMenu({ 
-  anchorEl, 
-  open, 
-  onClose, 
-  onAddRow, 
-  onAddColumn, 
-  onDeleteRow, 
-  onDeleteColumn, 
-  onDeleteTable 
+interface TableContextMenuProps {
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  onAddRow: () => void;
+  onAddColumn: () => void;
+  onDeleteRow: () => void;
+  onDeleteColumn: () => void;
+  onDeleteTable: () => void;
+}
+
+export default function TableContextMenu({
+  anchorEl,
+  open,
+  onClose,
+  onAddRow,
+  onAddColumn,
+  onDeleteRow,
+  onDeleteColumn,
+  onDeleteTable,
 }: TableContextMenuProps) {
   return (
-    <Menu
-      anchorEl={anchorEl}
-      open={open}
-      onClose={onClose}
-      anchorOrigin={{
-        vertical: 'bottom',
-        horizontal: 'right',
-      }}
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
-    >
-      <MenuItem onClick={onAddRow}>
+    <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
+      <MenuItem onClick={onAddRow} data-operation="add-row">
         <ListItemIcon>
           <AddIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>Add Row</ListItemText>
       </MenuItem>
-      <MenuItem onClick={onAddColumn}>
+      <MenuItem onClick={onAddColumn} data-operation="add-column">
         <ListItemIcon>
           <AddIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>Add Column</ListItemText>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={onDeleteRow}>
+      <MenuItem onClick={onDeleteRow} data-operation="delete-row">
         <ListItemIcon>
           <DeleteIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>Delete Row</ListItemText>
       </MenuItem>
-      <MenuItem onClick={onDeleteColumn}>
+      <MenuItem onClick={onDeleteColumn} data-operation="delete-column">
         <ListItemIcon>
           <DeleteIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText>Delete Column</ListItemText>
       </MenuItem>
       <Divider />
-      <MenuItem onClick={onDeleteTable}>
+      <MenuItem onClick={onDeleteTable} data-operation="delete-table">
         <ListItemIcon>
           <DeleteIcon fontSize="small" />
         </ListItemIcon>

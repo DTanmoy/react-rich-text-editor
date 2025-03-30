@@ -878,7 +878,9 @@ export default function Editor({
     if (selectedTableElement.table && selectedTableElement.row) {
       const table = selectedTableElement.table;
       const rowIndex = selectedTableElement.row.rowIndex;
-      const tbody = findAncestorByTagName(selectedTableElement.row, "tbody") as HTMLTableSectionElement;
+      
+      // Get tbody, creating it if needed
+      const tbody = ensureTableBodyExists(table);
       const thead = table.querySelector("thead");
       
       console.log("Adding row, details:", { 
@@ -911,23 +913,14 @@ export default function Editor({
           thead.appendChild(newRow);
         }
       } else {
-        // For tbody rows
-        if (tbody) {
-          // If the row is in tbody, insert relative to other tbody rows
-          if (rowIndex >= 0) {
-            const tbodyRowIndex = rowIndex - (thead ? thead.rows.length : 0);
-            const nextRow = tbodyRowIndex + 1 < tbody.rows.length ? tbody.rows[tbodyRowIndex + 1] : null;
-            if (nextRow) {
-              tbody.insertBefore(newRow, nextRow);
-            } else {
-              tbody.appendChild(newRow);
-            }
-          } else {
-            tbody.appendChild(newRow);
-          }
+        // For tbody rows, insert after the selected row
+        const tbodyRowIndex = rowIndex - (thead ? thead.rows.length : 0);
+        const nextRow = tbodyRowIndex + 1 < tbody.rows.length ? tbody.rows[tbodyRowIndex + 1] : null;
+        
+        if (nextRow) {
+          tbody.insertBefore(newRow, nextRow);
         } else {
-          // If no tbody exists, append directly to table
-          table.appendChild(newRow);
+          tbody.appendChild(newRow);
         }
       }
 
@@ -990,27 +983,37 @@ export default function Editor({
         // Close image menu if clicking elsewhere
         setImageMenuAnchorEl(null);
 
-        // Check if clicking on table cell
-        const cell =
-          findAncestorByTagName(target, "td") ||
-          findAncestorByTagName(target, "th");
-        const row = cell ? findAncestorByTagName(cell, "tr") : null;
-        const table = row ? findAncestorByTagName(row, "table") : null;
-
-        if (cell && row && table) {
-          console.log("Table cell clicked:", { 
-            table, 
-            row, 
-            cell, 
-            cellIndex: (cell as HTMLTableCellElement).cellIndex,
-            rowIndex: (row as HTMLTableRowElement).rowIndex
-          });
+        // Check if clicking on or inside a table cell
+        const findTableElements = (element: HTMLElement) => {
+          const cell = findAncestorByTagName(element, "td") || findAncestorByTagName(element, "th");
+          if (!cell) return null;
           
-          setSelectedTableElement({
+          const row = findAncestorByTagName(cell, "tr");
+          if (!row) return null;
+          
+          const table = findAncestorByTagName(row, "table");
+          if (!table) return null;
+          
+          return {
             table: table as HTMLTableElement,
             row: row as HTMLTableRowElement,
-            cell: cell as HTMLTableCellElement,
+            cell: cell as HTMLTableCellElement
+          };
+        };
+        
+        const tableElements = findTableElements(target);
+        
+        if (tableElements) {
+          console.log("Table cell selected:", { 
+            table: tableElements.table, 
+            row: tableElements.row, 
+            cell: tableElements.cell,
+            cellIndex: tableElements.cell.cellIndex,
+            rowIndex: tableElements.row.rowIndex
           });
+          
+          // Store a reference to the selected table elements
+          setSelectedTableElement(tableElements);
         }
       }
     };
@@ -1615,6 +1618,34 @@ export default function Editor({
     updateContent();
   };
 
+  // Add this after the verifyTableSelection function
+  const ensureTableBodyExists = (table: HTMLTableElement): HTMLTableSectionElement => {
+    // Check if the table already has a tbody
+    let tbody = table.querySelector('tbody');
+    
+    // If no tbody exists, create one and move all rows (except those in thead) to it
+    if (!tbody) {
+      tbody = document.createElement('tbody');
+      
+      // Get all direct tr children of the table that aren't in a thead
+      const directRows = Array.from(table.children).filter(
+        child => child.tagName === 'TR' && 
+        (!child.parentElement || child.parentElement.tagName !== 'THEAD')
+      ) as HTMLElement[];
+      
+      // Move these rows to the tbody
+      directRows.forEach(row => {
+        tbody!.appendChild(row);
+      });
+      
+      // Add the tbody to the table
+      table.appendChild(tbody);
+    }
+    
+    return tbody as HTMLTableSectionElement;
+  };
+
+  // Add a minimal usage of the handleAddTablePartClick and handleDelete functions
   // Make unused functions used for table operations
   useEffect(() => {
     // Add this comment to fix unused variable warning
