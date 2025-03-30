@@ -1905,24 +1905,21 @@ export default function Editor({
       return prevAttachments.filter((attachment) => attachment.id !== attachmentId);
     });
     
-    // Find and remove the attachment element from the editor
+    // Find and remove the attachment span from the editor
     if (editorRef.current) {
       const attachmentElement = editorRef.current.querySelector(
-        `[data-attachment-id="${attachmentId}"]`
+        `a[data-attachment-id="${attachmentId}"]`
       );
       
       if (attachmentElement) {
-        // Get parent paragraph or container
-        const parentNode = attachmentElement.parentNode;
-        
-        // Remove the attachment element
-        attachmentElement.remove();
-        
-        // If parent is now empty, remove it too (clean up empty paragraphs)
-        if (parentNode && parentNode.textContent?.trim() === '' && parentNode.childNodes.length === 0) {
-          if (parentNode instanceof HTMLElement) {
-            parentNode.remove();
-          }
+        // Get the parent span that contains both icon and link
+        const parentSpan = attachmentElement.parentElement;
+        if (parentSpan && parentSpan.tagName === 'SPAN') {
+          // Remove the entire attachment span
+          parentSpan.remove();
+        } else {
+          // Fallback to just removing the link
+          attachmentElement.remove();
         }
         
         // Update content to reflect the removal
@@ -1936,108 +1933,173 @@ export default function Editor({
       return;
     }
     
-    // Focus the editor
+    // Focus the editor to ensure we have focus
     editorRef.current.focus();
     
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) {
-      // If no selection, insert at the end
-      const range = document.createRange();
-      range.selectNodeContents(editorRef.current);
-      range.collapse(false); // collapse to end
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+    // Get current selection - we need to be more careful with selection handling
+    let selection = window.getSelection();
+    let range: Range | null = null;
+    
+    // First try to get the current selection
+    if (selection && selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+      
+      // Verify the selection is within our editor
+      let inEditor = false;
+      let node: Node | null = range.commonAncestorContainer;
+      while (node) {
+        if (node === editorRef.current) {
+          inEditor = true;
+          break;
+        }
+        node = node.parentNode;
+      }
+      
+      // If selection is not in editor, we need to create a new range
+      if (!inEditor) {
+        range = null;
+      }
     }
     
-    // Create each attachment div and insert it
-    attachmentsToInsert.forEach((attachment) => {
-      // Create a paragraph if we're not already in one
-      document.execCommand('insertParagraph', false);
+    // If no valid range exists, create one at the current cursor position or at the end
+    if (!range) {
+      range = document.createRange();
       
-      // Create attachment HTML
-      const attachmentHtml = `
-        <div class="editor-attachment" data-attachment-id="${attachment.id}" contenteditable="false" style="display: flex; align-items: center; padding: 8px 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; background-color: #f8f9fa;">
-          <div class="attachment-icon" style="font-size: 24px; margin-right: 12px;">${getAttachmentIconHTML(attachment.type)}</div>
-          <div class="attachment-details" style="flex-grow: 1; overflow: hidden;">
-            <div class="attachment-name" style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${attachment.name}</div>
-            <div class="attachment-size" style="font-size: 0.75rem; color: #666;">${formatFileSize(attachment.size)}</div>
-          </div>
-          <div class="attachment-actions" style="display: flex; gap: 8px;">
-            <button class="attachment-download" data-attachment-id="${attachment.id}" title="Download" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px;">⬇️</button>
-            <button class="attachment-delete" data-attachment-id="${attachment.id}" title="Remove" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px;">🗑️</button>
-          </div>
-        </div>
-      `;
+      // Try to place cursor at end of current content
+      if (editorRef.current.lastChild) {
+        range.selectNodeContents(editorRef.current.lastChild);
+        range.collapse(false); // Collapse to end
+      } else {
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false); // Collapse to end
+      }
       
-      // Insert the attachment HTML
-      document.execCommand('insertHTML', false, attachmentHtml);
+      // Apply the new range to selection
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    
+    // Helper function to get file type icon
+    const getFileTypeIcon = (fileType: string): string => {
+      const type = fileType.split('/')[0];
+      switch (type) {
+        case 'image':
+          return '🖼️';
+        case 'application':
+          return fileType.includes('pdf') ? '📄' : '📎';
+        case 'audio':
+          return '🔊';
+        case 'video':
+          return '🎬';
+        case 'text':
+          return '📝';
+        default:
+          return '📎';
+      }
+    };
+    
+    // Create each attachment as a simple text with a link
+    // We'll use a document fragment to batch our insertions
+    const fragment = document.createDocumentFragment();
+    let lastElement: HTMLElement | null = null;
+    
+    attachmentsToInsert.forEach((attachment, index) => {
+      // Create a span to hold the icon and link
+      const attachmentSpan = document.createElement('span');
+      attachmentSpan.style.display = 'inline-flex';
+      attachmentSpan.style.alignItems = 'center';
+      attachmentSpan.style.marginRight = '5px';
+      
+      // Create icon element
+      const iconSpan = document.createElement('span');
+      iconSpan.textContent = getFileTypeIcon(attachment.type);
+      iconSpan.style.marginRight = '4px';
+      iconSpan.style.fontSize = '1.1em';
+      
+      // Create link element for the attachment
+      const linkElement = document.createElement("a");
+      linkElement.href = attachment.url;
+      linkElement.textContent = attachment.name;
+      linkElement.target = "_blank"; // Open in new tab
+      linkElement.rel = "noopener noreferrer"; // Security best practice
+      linkElement.dataset.attachmentId = attachment.id; // Store the attachment ID
+      linkElement.download = attachment.name; // Add download attribute to make it downloadable
+      linkElement.title = "Click to download, double-click to remove"; // Add tooltip for clarity
+      
+      // Add specific styling for attachment links
+      linkElement.style.color = "#1976d2";
+      linkElement.style.textDecoration = "none";
+      linkElement.style.fontWeight = "500";
+      
+      // Add click event to handle file download
+      linkElement.addEventListener('click', (e) => {
+        // We need to prevent the default to handle the download manually
+        // to ensure it works across different browsers
+        e.preventDefault();
+        
+        // Find the attachment in our state
+        const attachmentToDownload = attachments.find(a => a.id === attachment.id);
+        if (attachmentToDownload) {
+          // Create a download link
+          const downloadLink = document.createElement('a');
+          downloadLink.href = attachmentToDownload.url;
+          downloadLink.download = attachmentToDownload.name;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+        }
+      });
+      
+      // Add double-click event to remove the attachment
+      linkElement.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        handleRemoveAttachment(attachment.id);
+      });
+      
+      // Assemble the attachment span
+      attachmentSpan.appendChild(iconSpan);
+      attachmentSpan.appendChild(linkElement);
+      
+      // Add to fragment
+      fragment.appendChild(attachmentSpan);
+      
+      // Add a space after (except for the last one)
+      if (index < attachmentsToInsert.length - 1) {
+        fragment.appendChild(document.createTextNode(" "));
+      }
+      
+      // Keep track of the last element for cursor positioning
+      lastElement = attachmentSpan;
     });
     
-    // Add click event listeners for the download and delete buttons
-    setTimeout(() => {
-      if (editorRef.current) {
-        const downloadBtns = editorRef.current.querySelectorAll('.attachment-download');
-        const deleteBtns = editorRef.current.querySelectorAll('.attachment-delete');
+    // Now, get the selection again (it might have changed)
+    selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+      
+      // Insert the fragment at the current position
+      range.deleteContents();
+      range.insertNode(fragment);
+      
+      // Add a space after the last attachment
+      const spaceNode = document.createTextNode(" ");
+      
+      // Position range after the last attachment
+      if (lastElement) {
+        range.setStartAfter(lastElement);
+        range.setEndAfter(lastElement);
+        range.insertNode(spaceNode);
         
-        downloadBtns.forEach((btn) => {
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const attachmentId = btn.getAttribute('data-attachment-id');
-            if (attachmentId) {
-              const attachment = attachments.find((a) => a.id === attachmentId);
-              if (attachment) {
-                // Create a download link
-                const link = document.createElement('a');
-                link.href = attachment.url;
-                link.download = attachment.name;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }
-            }
-          });
-        });
-        
-        deleteBtns.forEach((btn) => {
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const attachmentId = btn.getAttribute('data-attachment-id');
-            if (attachmentId) {
-              handleRemoveAttachment(attachmentId);
-            }
-          });
-        });
+        // Position cursor after the space
+        range.setStartAfter(spaceNode);
+        range.setEndAfter(spaceNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
       }
-    }, 100);
-    
-    // Update content
-    updateContent();
-  };
-
-  const getAttachmentIconHTML = (fileType: string) => {
-    const type = fileType.split('/')[0];
-    switch (type) {
-      case 'image':
-        return '🖼️';
-      case 'application':
-        return fileType.includes('pdf') ? '📄' : '📎';
-      case 'audio':
-        return '🔊';
-      case 'video':
-        return '🎬';
-      default:
-        return '📎';
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    
+    // Update content to reflect the changes
+    updateContent();
   };
 
   return (
