@@ -1,80 +1,89 @@
 import { styled } from "@mui/material/styles";
+import { Box } from "@mui/material";
 
-export const CustomEditable = styled("div")<{
+interface CustomEditableProps {
   isExpanded: boolean;
-  fontSize?: string | number;
+  fontSize?: string;
   fontFamily?: string;
-}>(({ theme, isExpanded, fontSize, fontFamily }) => ({
-  width: "100%",
-  minHeight: isExpanded ? "200px" : "40px",
-  maxHeight: isExpanded ? "none" : "100px",
-  backgroundColor: "transparent",
-  color: theme.palette.text.primary,
-  fontSize: fontSize || theme.typography.body1.fontSize,
-  fontFamily: fontFamily || theme.typography.fontFamily,
-  outline: "none",
-  padding: "8px 12px",
-  flex: 1,
-  overflow: "auto",
-  "&:empty:before": {
-    content: "attr(data-placeholder)",
-    color: theme.palette.text.secondary,
-    opacity: 0.7,
-  },
-  "& img": {
-    maxWidth: "100%",
-    height: "auto",
-    display: "block",
-    margin: "8px 0",
-  },
-  "& table": {
-    borderCollapse: "collapse",
-    width: "100%",
-    margin: "8px 0",
-    tableLayout: "fixed",
-    border: "1px solid #ccc",
-  },
-  "& th, & td": {
-    border: "1px solid #ccc",
-    padding: "8px",
-    minWidth: "50px",
-    wordBreak: "break-word",
-    verticalAlign: "top",
-  },
-  "& th": {
-    backgroundColor: "#f5f5f5",
-    fontWeight: "bold",
-    textAlign: "left",
-  },
-  "& p": {
-    margin: "0.5em 0",
-  },
-  // Added improved styling for lists
-  "& ul, & ol": {
-    padding: "0 0 0 24px",
-    margin: "8px 0",
-  },
-  "& ul": {
-    listStyleType: "disc",
-  },
-  "& ol": {
-    listStyleType: "decimal",
-  },
-  "& li": {
-    margin: "4px 0",
-    padding: "0 0 0 4px",
-  },
-  // Ensure nested lists have proper styling
-  "& ul ul": {
-    listStyleType: "circle",
-  },
-  "& ul ul ul": {
-    listStyleType: "square",
-  },
-  "& ol ol": {
-    listStyleType: "lower-alpha",
-  },
-  "& ol ol ol": {
-    listStyleType: "lower-roman",
-  },
-})); 
+}
+
+export const CustomEditable = styled(Box, {
+  shouldForwardProp: (prop) =>
+    prop !== "isExpanded" && prop !== "fontSize" && prop !== "fontFamily",
+})<CustomEditableProps>`
+  padding: 16px;
+  min-height: ${(props) => (props.isExpanded ? "200px" : "40px")};
+  outline: none;
+  overflow-y: auto;
+  word-break: break-word;
+  flex-grow: 1;
+  transition: min-height 0.2s ease;
+  font-size: ${(props) => props.fontSize || "inherit"};
+  font-family: ${(props) => props.fontFamily || "inherit"};
+
+  &[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    pointer-events: none;
+  }
+
+  a {
+    color: #1976d2;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  p {
+    margin: 0.5em 0;
+  }
+
+  blockquote {
+    border-left: 4px solid #ddd;
+    margin-left: 0;
+    padding-left: 16px;
+    color: #666;
+  }
+
+  pre {
+    background-color: #f5f5f5;
+    padding: 16px;
+    border-radius: 4px;
+    overflow: auto;
+  }
+
+  code {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    border: 1px solid #ccc;
+  }
+  
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    min-width: 50px;
+    vertical-align: top;
+    word-break: break-word;
+  }
+  
+  th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    text-align: left;
+  }
+`; 
