@@ -1,6 +1,28 @@
 import { styled } from "@mui/material/styles";
 import { Box } from "@mui/material";
 
+/**
+ * A custom styled editable component for the rich text editor
+ * 
+ * This component provides the main editable area with various styling options for
+ * the editor, including the ability to expand/collapse, custom font sizes, and
+ * special styling for various HTML elements (images, links, tables, etc.)
+ * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {boolean} [props.isExpanded=false] - Whether the editor is expanded to show more content
+ * @param {string} [props.fontSize] - Custom font size for the editor content
+ * @param {string} [props.fontFamily] - Custom font family for the editor content
+ * 
+ * @example
+ * // Basic usage with expansion
+ * <CustomEditable
+ *   contentEditable
+ *   isExpanded={true}
+ *   fontSize="16px"
+ *   fontFamily="Arial"
+ * />
+ */
 export const CustomEditable = styled(Box, {
   shouldForwardProp: (prop) => 
     prop !== 'isExpanded' && prop !== 'fontSize' && prop !== 'fontFamily',

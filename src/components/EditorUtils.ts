@@ -1,5 +1,11 @@
 /**
  * Escape HTML characters to prevent XSS attacks
+ * 
+ * @param {string} text - The raw text to be escaped
+ * @returns {string} The text with HTML special characters escaped
+ * @example
+ * // Returns: "&lt;div&gt;Hello&lt;/div&gt;"
+ * escapeHtml("<div>Hello</div>")
  */
 export const escapeHtml = (text: string): string => {
   return text
@@ -12,6 +18,13 @@ export const escapeHtml = (text: string): string => {
 
 /**
  * Find an ancestor element with the given tag name
+ * 
+ * @param {Node} element - The starting node to search from
+ * @param {string} tagName - The tag name to search for (case-insensitive)
+ * @returns {HTMLElement|null} The matching ancestor element or null if not found
+ * @example
+ * // If element is inside a <table>, this returns the table element
+ * const tableElement = findAncestorByTagName(element, 'table');
  */
 export const findAncestorByTagName = (element: Node, tagName: string): HTMLElement | null => {
   let currentNode: Node | null = element;
@@ -27,7 +40,13 @@ export const findAncestorByTagName = (element: Node, tagName: string): HTMLEleme
 };
 
 /**
- * Find the block parent of a node
+ * Find the block parent of a node (p, div, blockquote, etc.)
+ * 
+ * @param {Node} node - The starting node to search from
+ * @returns {HTMLElement|null} The closest block parent element or null if not found
+ * @example
+ * // If node is inside a paragraph, this returns the paragraph element
+ * const blockElement = findBlockParent(node);
  */
 export const findBlockParent = (node: Node): HTMLElement | null => {
   let currentNode: Node | null = node;
@@ -69,13 +88,31 @@ export const findBlockParent = (node: Node): HTMLElement | null => {
 
 /**
  * Get all block elements in a range
+ * 
+ * @param {Range} range - The DOM range to analyze
+ * @returns {HTMLElement[]} Array of block elements within the range
+ * @description
+ * This function clones the range contents and analyzes the DOM structure to find all block-level 
+ * elements. If no blocks are found in the range contents, it attempts to find the containing 
+ * blocks of the range start and end points.
+ * @example
+ * // Get all paragraphs, divs, etc. in the current selection
+ * const selection = window.getSelection();
+ * if (selection && selection.rangeCount > 0) {
+ *   const blocks = getBlocksInRange(selection.getRangeAt(0));
+ *   // Process blocks...
+ * }
  */
 export const getBlocksInRange = (range: Range): HTMLElement[] => {
   // Create a temporary document fragment to analyze
   const fragment = range.cloneContents();
   const blocks: HTMLElement[] = [];
   
-  // Function to collect blocks from a node and its children
+  /**
+   * Helper function to collect blocks from a node and its children
+   * 
+   * @param {Node} node - The node to analyze
+   */
   const collectBlocks = (node: Node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
