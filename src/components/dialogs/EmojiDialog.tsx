@@ -84,7 +84,7 @@ const EmojiDialog = ({ open, anchorEl, onClose, onEmojiSelect }: EmojiDialogProp
       }}
     >
       <TitleContainer>
-        <Typography variant="h6">Emojis</Typography>
+        <div>Emojis</div>
         <IconButton aria-label="close" onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>

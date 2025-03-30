@@ -1,7 +1,10 @@
 import { styled } from "@mui/material/styles";
 import { Box } from "@mui/material";
 
-export const CustomEditable = styled(Box)<{
+export const CustomEditable = styled(Box, {
+  shouldForwardProp: (prop) => 
+    prop !== 'isExpanded' && prop !== 'fontSize' && prop !== 'fontFamily',
+})<{
   isExpanded?: boolean;
   fontSize?: string;
   fontFamily?: string;
@@ -19,6 +22,82 @@ export const CustomEditable = styled(Box)<{
   "& img": {
     cursor: "zoom-in",
     maxWidth: "100%",
+  },
+
+  // Add styles for attachment display
+  "& .editor-attachments": {
+    margin: "8px 0",
+  },
+
+  "& .editor-attachment": {
+    display: "flex !important",
+    alignItems: "center !important",
+    padding: "8px 12px !important",
+    margin: "8px 0 !important",
+    border: `1px solid ${theme.palette.divider} !important`,
+    borderRadius: `${theme.shape.borderRadius}px !important`,
+    backgroundColor: `${theme.palette.background.paper} !important`,
+    width: "auto !important",
+    maxWidth: "100% !important",
+    boxSizing: "border-box !important",
+    contentEditable: "false !important",
+  },
+
+  "& .editor-attachment-content": {
+    display: "flex",
+    alignItems: "center",
+    padding: "8px 12px",
+  },
+
+  "& .attachment-icon": {
+    fontSize: "24px !important",
+    marginRight: "12px !important",
+    display: "flex !important",
+    alignItems: "center !important",
+    justifyContent: "center !important",
+  },
+
+  "& .attachment-details": {
+    flexGrow: "1 !important",
+    overflow: "hidden !important",
+    width: "auto !important",
+  },
+
+  "& .attachment-name": {
+    fontWeight: "bold !important",
+    overflow: "hidden !important",
+    textOverflow: "ellipsis !important",
+    whiteSpace: "nowrap !important",
+  },
+
+  "& .attachment-size": {
+    fontSize: "0.75rem !important",
+    color: `${theme.palette.text.secondary} !important`,
+  },
+
+  "& .attachment-actions": {
+    display: "flex !important",
+    gap: "8px !important",
+  },
+
+  "& .attachment-download, & .attachment-delete": {
+    background: "none !important",
+    border: "none !important",
+    cursor: "pointer !important",
+    fontSize: "16px !important",
+    padding: "4px !important",
+    borderRadius: "4px !important",
+    display: "flex !important",
+    alignItems: "center !important",
+    justifyContent: "center !important",
+  },
+
+  "& .attachment-delete:hover": {
+    backgroundColor: `${theme.palette.error.light} !important`,
+  },
+
+  "& .attachment-download:hover": {
+    backgroundColor: `${theme.palette.action.hover} !important`,
   },
 
   "&:empty:before": {

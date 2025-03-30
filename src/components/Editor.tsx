@@ -74,8 +74,16 @@ import {
   TableContextMenu,
   EmojiDialog,
   ImagePreviewDialog,
+  AttachmentDialog,
 } from "./dialogs";
 import { findAncestorByTagName, getBlocksInRange } from "./EditorUtils";
+import type { AttachmentFile } from "./AttachmentDisplay";
+
+// Update the handleAttachmentConfirm method with proper typing and remove unused variables
+interface FileWithPreview extends File {
+  id: string;
+  previewUrl?: string;
+}
 
 export default function Editor({
   width = "100%",
@@ -142,6 +150,8 @@ export default function Editor({
   const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
   const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -1855,6 +1865,181 @@ export default function Editor({
     setImagePreviewOpen(false);
   };
 
+  const handleAttachment = () => {
+    setAttachmentDialogOpen(true);
+  };
+
+  const handleAttachmentConfirm = (files: FileWithPreview[]) => {
+    // Convert files from the dialog to attachment objects
+    const newAttachments: AttachmentFile[] = files.map((file) => {
+      let fileUrl;
+      
+      // For images, we can use the previewUrl if available
+      if (file.previewUrl) {
+        fileUrl = file.previewUrl;
+      } else {
+        // For other files, create a blob URL
+        // In a real application, this would be a URL to the uploaded file on your server
+        fileUrl = URL.createObjectURL(file);
+      }
+      
+      return {
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: fileUrl,
+      };
+    });
+    
+    // Store the new attachments in state
+    setAttachments((prevAttachments) => [...prevAttachments, ...newAttachments]);
+    
+    // Insert the attachments into the editor
+    insertAttachmentsIntoEditor(newAttachments);
+  };
+
+  const handleRemoveAttachment = (attachmentId: string) => {
+    setAttachments((prevAttachments) => {
+      // Filter out the attachment to be removed
+      return prevAttachments.filter((attachment) => attachment.id !== attachmentId);
+    });
+    
+    // Find and remove the attachment element from the editor
+    if (editorRef.current) {
+      const attachmentElement = editorRef.current.querySelector(
+        `[data-attachment-id="${attachmentId}"]`
+      );
+      
+      if (attachmentElement) {
+        // Get parent paragraph or container
+        const parentNode = attachmentElement.parentNode;
+        
+        // Remove the attachment element
+        attachmentElement.remove();
+        
+        // If parent is now empty, remove it too (clean up empty paragraphs)
+        if (parentNode && parentNode.textContent?.trim() === '' && parentNode.childNodes.length === 0) {
+          if (parentNode instanceof HTMLElement) {
+            parentNode.remove();
+          }
+        }
+        
+        // Update content to reflect the removal
+        updateContent();
+      }
+    }
+  };
+
+  const insertAttachmentsIntoEditor = (attachmentsToInsert: AttachmentFile[]) => {
+    if (!editorRef.current) {
+      return;
+    }
+    
+    // Focus the editor
+    editorRef.current.focus();
+    
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) {
+      // If no selection, insert at the end
+      const range = document.createRange();
+      range.selectNodeContents(editorRef.current);
+      range.collapse(false); // collapse to end
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    
+    // Create each attachment div and insert it
+    attachmentsToInsert.forEach((attachment) => {
+      // Create a paragraph if we're not already in one
+      document.execCommand('insertParagraph', false);
+      
+      // Create attachment HTML
+      const attachmentHtml = `
+        <div class="editor-attachment" data-attachment-id="${attachment.id}" contenteditable="false" style="display: flex; align-items: center; padding: 8px 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; background-color: #f8f9fa;">
+          <div class="attachment-icon" style="font-size: 24px; margin-right: 12px;">${getAttachmentIconHTML(attachment.type)}</div>
+          <div class="attachment-details" style="flex-grow: 1; overflow: hidden;">
+            <div class="attachment-name" style="font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${attachment.name}</div>
+            <div class="attachment-size" style="font-size: 0.75rem; color: #666;">${formatFileSize(attachment.size)}</div>
+          </div>
+          <div class="attachment-actions" style="display: flex; gap: 8px;">
+            <button class="attachment-download" data-attachment-id="${attachment.id}" title="Download" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px;">⬇️</button>
+            <button class="attachment-delete" data-attachment-id="${attachment.id}" title="Remove" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px;">🗑️</button>
+          </div>
+        </div>
+      `;
+      
+      // Insert the attachment HTML
+      document.execCommand('insertHTML', false, attachmentHtml);
+    });
+    
+    // Add click event listeners for the download and delete buttons
+    setTimeout(() => {
+      if (editorRef.current) {
+        const downloadBtns = editorRef.current.querySelectorAll('.attachment-download');
+        const deleteBtns = editorRef.current.querySelectorAll('.attachment-delete');
+        
+        downloadBtns.forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const attachmentId = btn.getAttribute('data-attachment-id');
+            if (attachmentId) {
+              const attachment = attachments.find((a) => a.id === attachmentId);
+              if (attachment) {
+                // Create a download link
+                const link = document.createElement('a');
+                link.href = attachment.url;
+                link.download = attachment.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            }
+          });
+        });
+        
+        deleteBtns.forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const attachmentId = btn.getAttribute('data-attachment-id');
+            if (attachmentId) {
+              handleRemoveAttachment(attachmentId);
+            }
+          });
+        });
+      }
+    }, 100);
+    
+    // Update content
+    updateContent();
+  };
+
+  const getAttachmentIconHTML = (fileType: string) => {
+    const type = fileType.split('/')[0];
+    switch (type) {
+      case 'image':
+        return '🖼️';
+      case 'application':
+        return fileType.includes('pdf') ? '📄' : '📎';
+      case 'audio':
+        return '🔊';
+      case 'video':
+        return '🎬';
+      default:
+        return '📎';
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <Box
       sx={{
@@ -2148,7 +2333,7 @@ export default function Editor({
           </Tooltip>
 
           <Tooltip title="Attach">
-            <IconButton size="small">
+            <IconButton size="small" onClick={handleAttachment}>
               <AttachFileIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -2228,6 +2413,12 @@ export default function Editor({
         open={imagePreviewOpen}
         onClose={handleImagePreviewClose}
         imageElement={selectedImageElement}
+      />
+
+      <AttachmentDialog
+        open={attachmentDialogOpen}
+        onClose={() => setAttachmentDialogOpen(false)}
+        onConfirm={handleAttachmentConfirm}
       />
     </Box>
   );
