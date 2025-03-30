@@ -40,10 +40,8 @@ import LinkIcon from "@mui/icons-material/Link";
 import ImageIcon from "@mui/icons-material/Image";
 import CodeIcon from "@mui/icons-material/Code";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import SendIcon from "@mui/icons-material/Send";
-import TextFieldsIcon from "@mui/icons-material/TextFields";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FormatClearIcon from "@mui/icons-material/FormatClear";
 import FormatIndentDecreaseIcon from "@mui/icons-material/FormatIndentDecrease";
@@ -58,6 +56,9 @@ import CropIcon from "@mui/icons-material/Crop";
 import FormatColorFillIcon from "@mui/icons-material/FormatColorFill";
 import FormatColorTextIcon from "@mui/icons-material/FormatColorText";
 import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { EditorProps, HandlePosition, CSSPositionProperty } from "./interfaces";
 import { CustomEditable } from "./StyledComponents";
@@ -71,6 +72,7 @@ import {
   FontColorDialog,
   AddTablePartDialog,
   TableContextMenu,
+  EmojiDialog,
 } from "./dialogs";
 import { findAncestorByTagName, getBlocksInRange } from "./EditorUtils";
 
@@ -136,6 +138,8 @@ export default function Editor({
   const [fontSizeMenuAnchorEl, setFontSizeMenuAnchorEl] =
     useState<null | HTMLElement>(null);
   const fontSizeMenuOpen = Boolean(fontSizeMenuAnchorEl);
+  const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
+  const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -1681,6 +1685,85 @@ export default function Editor({
     handleFontColorClose();
   };
 
+  // Add handler for emoji button click
+  const handleEmojiClick = (event: React.MouseEvent<HTMLElement>) => {
+    // Focus the editor first to ensure selection is in the editor
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+    
+    // Save both selection methods for better reliability
+    saveSelection();
+    saveSelectionRange();
+    
+    // Then open the emoji dialog
+    setEmojiDialogAnchorEl(event.currentTarget);
+    setEmojiDialogOpen(true);
+  };
+
+  // Add handler for emoji dialog close
+  const handleEmojiClose = () => {
+    setEmojiDialogOpen(false);
+    setEmojiDialogAnchorEl(null);
+  };
+
+  // Add handler for emoji selection
+  const handleEmojiSelect = (emoji: string) => {
+    // First try with our manual selection restoration
+    if (restoreSelectionRange()) {
+      document.execCommand('insertText', false, emoji);
+      updateContent();
+      return;
+    }
+    
+    // Then try with the React-managed selection
+    if (restoreSelection()) {
+      document.execCommand('insertText', false, emoji);
+      updateContent();
+      return;
+    }
+    
+    // Last resort: if we can't restore the selection, insert at end of editor
+    if (editorRef.current) {
+      // Focus on the editor first
+      editorRef.current.focus();
+      
+      // If the editor is empty or has only empty paragraphs, clear it first
+      if (!editorRef.current.textContent?.trim()) {
+        editorRef.current.innerHTML = '';
+      }
+      
+      // Create a text node with the emoji
+      const emojiNode = document.createTextNode(emoji);
+      
+      // Insert at cursor position if possible, otherwise at the end
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        // Try to use current selection
+        try {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(emojiNode);
+          
+          // Move cursor after the inserted emoji
+          range.setStartAfter(emojiNode);
+          range.setEndAfter(emojiNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch (e) {
+          // If that fails, just append to the end
+          console.error("Error inserting emoji at selection:", e);
+          editorRef.current.appendChild(emojiNode);
+        }
+      } else {
+        // No selection, append to the end
+        editorRef.current.appendChild(emojiNode);
+      }
+      
+      updateContent();
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -1764,6 +1847,12 @@ export default function Editor({
           <Tooltip title="Text highlight color">
             <IconButton onClick={handleHighlightColorClick} size="small">
               <FormatColorFillIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Insert emoji">
+            <IconButton onClick={handleEmojiClick} size="small">
+              <EmojiEmotionsIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
@@ -1913,6 +2002,24 @@ export default function Editor({
               <ListItemText>Delete Image</ListItemText>
             </MenuItem>
           </Menu>
+
+          <TableContextMenu
+            anchorEl={tableContextMenuAnchorEl}
+            open={tableContextMenuOpen}
+            onClose={handleTableContextMenuClose}
+            onAddRow={handleContextAddRow}
+            onAddColumn={handleContextAddColumn}
+            onDeleteRow={handleContextDeleteRow}
+            onDeleteColumn={handleContextDeleteColumn}
+            onDeleteTable={handleContextDeleteTable}
+          />
+
+          <EmojiDialog
+            open={emojiDialogOpen}
+            anchorEl={emojiDialogAnchorEl}
+            onClose={handleEmojiClose}
+            onEmojiSelect={handleEmojiSelect}
+          />
         </Toolbar>
       </Collapse>
 
@@ -1940,14 +2047,12 @@ export default function Editor({
           }}
         >
           <Tooltip title="Expand/Collapse">
-            <IconButton size="small" onClick={toggleExpanded}>
-              {isExpanded ? <MoreHorizIcon /> : <TextFieldsIcon />}
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Emoji">
-            <IconButton size="small">
-              <SentimentSatisfiedAltIcon fontSize="small" />
+            <IconButton
+              size="small"
+              onClick={toggleExpanded}
+              sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+            >
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Tooltip>
 
@@ -2026,17 +2131,6 @@ export default function Editor({
             handleAddRow();
           }
         }}
-      />
-
-      <TableContextMenu
-        anchorEl={tableContextMenuAnchorEl}
-        open={tableContextMenuOpen}
-        onClose={handleTableContextMenuClose}
-        onAddRow={handleContextAddRow}
-        onAddColumn={handleContextAddColumn}
-        onDeleteRow={handleContextDeleteRow}
-        onDeleteColumn={handleContextDeleteColumn}
-        onDeleteTable={handleContextDeleteTable}
       />
     </Box>
   );
