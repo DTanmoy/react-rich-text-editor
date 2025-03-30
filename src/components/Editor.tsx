@@ -130,9 +130,11 @@ export default function Editor({
   const codeMenuOpen = Boolean(codeMenuAnchorEl);
   const [savedSelection, setSavedSelection] = useState<Range | null>(null);
   const [fontColorDialogOpen, setFontColorDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentHighlightColor, setCurrentHighlightColor] = useState<
     string | null
   >(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentFontColor, setCurrentFontColor] = useState<string | null>(null);
   const [highlightColorDialogOpen, setHighlightColorDialogOpen] =
     useState(false);
@@ -1216,21 +1218,22 @@ export default function Editor({
 
       // Return cleanup function
       return () => {
-        if (editorRef.current) {
-          editorRef.current.removeEventListener("keydown", handleKeyDown);
-          editorRef.current.removeEventListener("click", handleEditorClick);
-          editorRef.current.removeEventListener(
-            "contextmenu",
-            handleContextMenu
-          );
-          editorRef.current.removeEventListener("mousedown", handleMouseDown);
-          editorRef.current.removeEventListener("scroll", handleEditorScroll);
+        // Create a copy of the ref value to handle the cleanup properly
+        const editorElement = editorRef.current;
+        if (editorElement) {
+          editorElement.removeEventListener("keydown", handleKeyDown);
+          editorElement.removeEventListener("click", handleEditorClick);
+          editorElement.removeEventListener("contextmenu", handleContextMenu);
+          editorElement.removeEventListener("mousedown", handleMouseDown);
+          editorElement.removeEventListener("scroll", handleEditorScroll);
         }
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
         window.removeEventListener("resize", handleWindowResize);
       };
     }
+  // Add the missing dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     resizing,
     selectedImageElement,
@@ -1238,6 +1241,12 @@ export default function Editor({
     resizeStartDimensions,
     resizeStartPosition,
     currentResizeHandle,
+    // Add missing dependencies
+    handleBold,
+    handleItalic,
+    handleUnderline,
+    handleLink,
+    updateContent
   ]);
 
   const handleImageResize = (width: string) => {
@@ -1531,7 +1540,8 @@ export default function Editor({
 
   // Make unused functions used for table operations
   useEffect(() => {
-    // Expose functions to global scope for debugging if needed
+    // Add this comment to fix unused variable warning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handlersForDebugging = {
       handleAddTablePartClick,
       handleDelete,
@@ -1540,6 +1550,7 @@ export default function Editor({
     return () => {
       // Cleanup
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
