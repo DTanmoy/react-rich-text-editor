@@ -73,6 +73,7 @@ import {
   AddTablePartDialog,
   TableContextMenu,
   EmojiDialog,
+  ImagePreviewDialog,
 } from "./dialogs";
 import { findAncestorByTagName, getBlocksInRange } from "./EditorUtils";
 
@@ -140,6 +141,7 @@ export default function Editor({
   const fontSizeMenuOpen = Boolean(fontSizeMenuAnchorEl);
   const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
   const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -1002,8 +1004,15 @@ export default function Editor({
         const img = target as HTMLImageElement;
         setSelectedImageElement(img);
 
-        // Show image menu
-        setImageMenuAnchorEl(target);
+        // Check if user is holding ctrl/cmd key (for editing) or regular click (for preview)
+        if (e instanceof MouseEvent && (e.ctrlKey || e.metaKey)) {
+          // Show image edit menu with ctrl/cmd+click
+          setImageMenuAnchorEl(target);
+        } else {
+          // Regular click - show preview
+          e.preventDefault(); // Prevent default behavior
+          setImagePreviewOpen(true);
+        }
       } else {
         // Close image menu if clicking elsewhere
         setImageMenuAnchorEl(null);
@@ -1842,6 +1851,10 @@ export default function Editor({
     }
   };
 
+  const handleImagePreviewClose = () => {
+    setImagePreviewOpen(false);
+  };
+
   return (
     <Box
       sx={{
@@ -2209,6 +2222,12 @@ export default function Editor({
             handleAddRow();
           }
         }}
+      />
+
+      <ImagePreviewDialog
+        open={imagePreviewOpen}
+        onClose={handleImagePreviewClose}
+        imageElement={selectedImageElement}
       />
     </Box>
   );

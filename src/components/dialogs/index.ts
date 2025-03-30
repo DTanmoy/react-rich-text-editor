@@ -7,4 +7,5 @@ export { default as ImageOptionsDialog } from './ImageOptionsDialog';
 export { default as LinkDialog } from './LinkDialog';
 export { default as TableContextMenu } from './TableContextMenu';
 export { default as TableDialog } from './TableDialog';
-export { default as EmojiDialog } from './EmojiDialog'; 
+export { default as EmojiDialog } from './EmojiDialog';
+export { default as ImagePreviewDialog } from './ImagePreviewDialog'; 
