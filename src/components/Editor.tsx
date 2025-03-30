@@ -40,10 +40,8 @@ import LinkIcon from "@mui/icons-material/Link";
 import ImageIcon from "@mui/icons-material/Image";
 import CodeIcon from "@mui/icons-material/Code";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import SendIcon from "@mui/icons-material/Send";
-import TextFieldsIcon from "@mui/icons-material/TextFields";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FormatClearIcon from "@mui/icons-material/FormatClear";
 import FormatIndentDecreaseIcon from "@mui/icons-material/FormatIndentDecrease";
@@ -58,6 +56,9 @@ import CropIcon from "@mui/icons-material/Crop";
 import FormatColorFillIcon from "@mui/icons-material/FormatColorFill";
 import FormatColorTextIcon from "@mui/icons-material/FormatColorText";
 import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { EditorProps, HandlePosition, CSSPositionProperty } from "./interfaces";
 import { CustomEditable } from "./StyledComponents";
@@ -71,6 +72,8 @@ import {
   FontColorDialog,
   AddTablePartDialog,
   TableContextMenu,
+  EmojiDialog,
+  ImagePreviewDialog,
 } from "./dialogs";
 import { findAncestorByTagName, getBlocksInRange } from "./EditorUtils";
 
@@ -136,6 +139,9 @@ export default function Editor({
   const [fontSizeMenuAnchorEl, setFontSizeMenuAnchorEl] =
     useState<null | HTMLElement>(null);
   const fontSizeMenuOpen = Boolean(fontSizeMenuAnchorEl);
+  const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
+  const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -256,9 +262,28 @@ export default function Editor({
     }
   };
 
+  // Add this helper function before updateContent function
+  const getCleanContent = (editorElement: HTMLElement): string => {
+    // Create a clone of the editor content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = editorElement.innerHTML;
+    
+    // Remove all resize handles and containers from the clone
+    const resizeHandles = tempDiv.querySelectorAll('.resize-handles-container, .resize-handle');
+    resizeHandles.forEach(handle => {
+      if (handle.parentNode) {
+        handle.parentNode.removeChild(handle);
+      }
+    });
+    
+    return tempDiv.innerHTML;
+  };
+
   const updateContent = () => {
     if (editorRef.current && onChange) {
-      const content = editorRef.current.innerHTML;
+      // Get the content without the resize handles
+      const content = getCleanContent(editorRef.current);
+      
       onChange(content);
       console.log("Content updated:", content);
     }
@@ -979,8 +1004,15 @@ export default function Editor({
         const img = target as HTMLImageElement;
         setSelectedImageElement(img);
 
-        // Show image menu
-        setImageMenuAnchorEl(target);
+        // Check if user is holding ctrl/cmd key (for editing) or regular click (for preview)
+        if (e instanceof MouseEvent && (e.ctrlKey || e.metaKey)) {
+          // Show image edit menu with ctrl/cmd+click
+          setImageMenuAnchorEl(target);
+        } else {
+          // Regular click - show preview
+          e.preventDefault(); // Prevent default behavior
+          setImagePreviewOpen(true);
+        }
       } else {
         // Close image menu if clicking elsewhere
         setImageMenuAnchorEl(null);
@@ -1072,6 +1104,10 @@ export default function Editor({
       }
     };
 
+    // Add this variable for tracking hover timeout
+    let hoverTimeout: number | null = null;
+
+    // Update the handleMouseMove function to debounce the hover detection
     const handleMouseMove = (e: MouseEvent) => {
       if (resizing && selectedImageElement && currentResizeHandle) {
         e.preventDefault();
@@ -1079,55 +1115,85 @@ export default function Editor({
         // Calculate how far we've moved from the starting position
         const deltaX = e.clientX - resizeStartPosition.x;
         const deltaY = e.clientY - resizeStartPosition.y;
-        const aspectRatio =
-          resizeStartDimensions.width / resizeStartDimensions.height;
+        const aspectRatio = resizeStartDimensions.width / resizeStartDimensions.height;
 
         // Calculate new width based on the resize handle being used
         let newWidth = resizeStartDimensions.width;
 
+        // Use a more precise and smoother calculation for each handle type
         switch (currentResizeHandle) {
           case "right":
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
+            break;
           case "bottom-right":
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
+            break;
           case "top-right":
-            newWidth = resizeStartDimensions.width + deltaX;
+            newWidth = Math.max(resizeStartDimensions.width + deltaX, 50);
             break;
           case "left":
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
+            break;
           case "bottom-left":
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
+            break;
           case "top-left":
-            newWidth = resizeStartDimensions.width - deltaX;
+            newWidth = Math.max(resizeStartDimensions.width - deltaX, 50);
             break;
           case "top":
-            // For top handle, maintain aspect ratio
-            newWidth = resizeStartDimensions.width + -deltaY * aspectRatio;
+            // For top handle, maintain aspect ratio based on vertical movement
+            newWidth = Math.max(resizeStartDimensions.width - deltaY * aspectRatio, 50);
             break;
           case "bottom":
-            // For bottom handle, maintain aspect ratio
-            newWidth = resizeStartDimensions.width + deltaY * aspectRatio;
+            // For bottom handle, maintain aspect ratio based on vertical movement
+            newWidth = Math.max(resizeStartDimensions.width + deltaY * aspectRatio, 50);
             break;
         }
 
-        // Ensure minimum dimensions
-        const minSize = 50;
-        newWidth = Math.max(newWidth, minSize);
-
-        // Update image dimensions
-        selectedImageElement.style.width = `${newWidth}px`;
+        // Set a percentage-based width for more predictable resizing
+        const containerWidth = editorRef.current?.clientWidth || 1;
+        const widthPercentage = (newWidth / containerWidth) * 100;
+        
+        // Update the image with percentage-based width
+        selectedImageElement.style.width = `${widthPercentage}%`;
         selectedImageElement.style.height = "auto"; // Maintain aspect ratio
 
-        // Update resize handle positions
-        updateResizeHandlePositions();
-
-        // Update content to save changes
-        updateContent();
+        // Use requestAnimationFrame for smoother updates
+        window.requestAnimationFrame(() => {
+          // Update resize handle positions
+          updateResizeHandlePositions();
+        });
       }
 
-      // Show resize handles when hovering over an image
+      // Show resize handles when hovering over an image with debouncing
       if (!resizing) {
         const target = e.target as HTMLElement;
 
         if (target.tagName === "IMG") {
+          // Clear any existing timeout
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+          }
+          
+          // Set the image element immediately
           setSelectedImageElement(target as HTMLImageElement);
-          addResizeHandles();
+          
+          // But add a small delay before showing handles to prevent flickering
+          hoverTimeout = setTimeout(() => {
+            addResizeHandles();
+          }, 100);
+        } else if (target.className !== 'resize-handle') {
+          // When moving away from image and not onto a handle, set a timeout to hide handles
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+          }
+          
+          hoverTimeout = setTimeout(() => {
+            // Only hide if we're not currently resizing
+            if (!resizing) {
+              removeResizeHandles();
+            }
+          }, 300);
         }
       }
     };
@@ -1138,8 +1204,11 @@ export default function Editor({
         setResizing(false);
         setCurrentResizeHandle(null);
 
-        // Final update to content
-        updateContent();
+        // Use a small delay before updating content to ensure all DOM updates are complete
+        setTimeout(() => {
+          // Update content storage after resize is complete
+          updateContent();
+        }, 50);
       }
     };
 
@@ -1167,6 +1236,7 @@ export default function Editor({
         handleContainer.style.height = `${imageRect.height}px`;
         handleContainer.style.pointerEvents = "none"; // Let clicks pass through to the image
         handleContainer.style.zIndex = "999";
+        handleContainer.style.transition = "all 0.05s ease"; // Add smooth transition for repositioning
 
         // Define handle positions
         const handlePositions: Record<string, HandlePosition> = {
@@ -1191,9 +1261,9 @@ export default function Editor({
           handle.style.backgroundColor = "#1976d2";
           handle.style.border = "2px solid white";
           handle.style.borderRadius = "50%";
-          handle.style.cursor = `${handleName}-resize`;
           handle.style.pointerEvents = "auto"; // Make handles clickable
           handle.style.zIndex = "1000";
+          handle.style.cursor = `${handleName}-resize`; // Set appropriate cursor
 
           // Apply position
           Object.entries(position).forEach(([prop, value]) => {
@@ -1236,12 +1306,28 @@ export default function Editor({
     };
 
     const updateResizeHandlePositions = () => {
-      // This function ensures resize handles are always correctly positioned
-      // when the image dimensions or positions change
       if (selectedImageElement && editorRef.current && resizeHandlesVisible) {
-        // Simply remove and re-add the handles to update positions
-        removeResizeHandles();
-        addResizeHandles();
+        const handleContainer = document.querySelector('.resize-handles-container') as HTMLElement;
+        
+        if (handleContainer) {
+          // Get updated positions
+          const imageRect = selectedImageElement.getBoundingClientRect();
+          const editorRect = editorRef.current.getBoundingClientRect();
+          
+          // Update container position
+          handleContainer.style.top = `${
+            imageRect.top - editorRect.top + editorRef.current.scrollTop
+          }px`;
+          handleContainer.style.left = `${
+            imageRect.left - editorRect.left + editorRef.current.scrollLeft
+          }px`;
+          handleContainer.style.width = `${imageRect.width}px`;
+          handleContainer.style.height = `${imageRect.height}px`;
+        } else {
+          // If container doesn't exist, re-create handles
+          removeResizeHandles();
+          addResizeHandles();
+        }
       }
     };
 
@@ -1286,6 +1372,11 @@ export default function Editor({
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
         window.removeEventListener("resize", handleWindowResize);
+        
+        // Also clear any pending timeouts
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+        }
       };
     }
   // Add the missing dependencies
@@ -1681,6 +1772,89 @@ export default function Editor({
     handleFontColorClose();
   };
 
+  // Add handler for emoji button click
+  const handleEmojiClick = (event: React.MouseEvent<HTMLElement>) => {
+    // Focus the editor first to ensure selection is in the editor
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+    
+    // Save both selection methods for better reliability
+    saveSelection();
+    saveSelectionRange();
+    
+    // Then open the emoji dialog
+    setEmojiDialogAnchorEl(event.currentTarget);
+    setEmojiDialogOpen(true);
+  };
+
+  // Add handler for emoji dialog close
+  const handleEmojiClose = () => {
+    setEmojiDialogOpen(false);
+    setEmojiDialogAnchorEl(null);
+  };
+
+  // Add handler for emoji selection
+  const handleEmojiSelect = (emoji: string) => {
+    // First try with our manual selection restoration
+    if (restoreSelectionRange()) {
+      document.execCommand('insertText', false, emoji);
+      updateContent();
+      return;
+    }
+    
+    // Then try with the React-managed selection
+    if (restoreSelection()) {
+      document.execCommand('insertText', false, emoji);
+      updateContent();
+      return;
+    }
+    
+    // Last resort: if we can't restore the selection, insert at end of editor
+    if (editorRef.current) {
+      // Focus on the editor first
+      editorRef.current.focus();
+      
+      // If the editor is empty or has only empty paragraphs, clear it first
+      if (!editorRef.current.textContent?.trim()) {
+        editorRef.current.innerHTML = '';
+      }
+      
+      // Create a text node with the emoji
+      const emojiNode = document.createTextNode(emoji);
+      
+      // Insert at cursor position if possible, otherwise at the end
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        // Try to use current selection
+        try {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(emojiNode);
+          
+          // Move cursor after the inserted emoji
+          range.setStartAfter(emojiNode);
+          range.setEndAfter(emojiNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch (e) {
+          // If that fails, just append to the end
+          console.error("Error inserting emoji at selection:", e);
+          editorRef.current.appendChild(emojiNode);
+        }
+      } else {
+        // No selection, append to the end
+        editorRef.current.appendChild(emojiNode);
+      }
+      
+      updateContent();
+    }
+  };
+
+  const handleImagePreviewClose = () => {
+    setImagePreviewOpen(false);
+  };
+
   return (
     <Box
       sx={{
@@ -1764,6 +1938,12 @@ export default function Editor({
           <Tooltip title="Text highlight color">
             <IconButton onClick={handleHighlightColorClick} size="small">
               <FormatColorFillIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Insert emoji">
+            <IconButton onClick={handleEmojiClick} size="small">
+              <EmojiEmotionsIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
@@ -1913,6 +2093,24 @@ export default function Editor({
               <ListItemText>Delete Image</ListItemText>
             </MenuItem>
           </Menu>
+
+          <TableContextMenu
+            anchorEl={tableContextMenuAnchorEl}
+            open={tableContextMenuOpen}
+            onClose={handleTableContextMenuClose}
+            onAddRow={handleContextAddRow}
+            onAddColumn={handleContextAddColumn}
+            onDeleteRow={handleContextDeleteRow}
+            onDeleteColumn={handleContextDeleteColumn}
+            onDeleteTable={handleContextDeleteTable}
+          />
+
+          <EmojiDialog
+            open={emojiDialogOpen}
+            anchorEl={emojiDialogAnchorEl}
+            onClose={handleEmojiClose}
+            onEmojiSelect={handleEmojiSelect}
+          />
         </Toolbar>
       </Collapse>
 
@@ -1940,14 +2138,12 @@ export default function Editor({
           }}
         >
           <Tooltip title="Expand/Collapse">
-            <IconButton size="small" onClick={toggleExpanded}>
-              {isExpanded ? <MoreHorizIcon /> : <TextFieldsIcon />}
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Emoji">
-            <IconButton size="small">
-              <SentimentSatisfiedAltIcon fontSize="small" />
+            <IconButton
+              size="small"
+              onClick={toggleExpanded}
+              sx={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+            >
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Tooltip>
 
@@ -2028,15 +2224,10 @@ export default function Editor({
         }}
       />
 
-      <TableContextMenu
-        anchorEl={tableContextMenuAnchorEl}
-        open={tableContextMenuOpen}
-        onClose={handleTableContextMenuClose}
-        onAddRow={handleContextAddRow}
-        onAddColumn={handleContextAddColumn}
-        onDeleteRow={handleContextDeleteRow}
-        onDeleteColumn={handleContextDeleteColumn}
-        onDeleteTable={handleContextDeleteTable}
+      <ImagePreviewDialog
+        open={imagePreviewOpen}
+        onClose={handleImagePreviewClose}
+        imageElement={selectedImageElement}
       />
     </Box>
   );
