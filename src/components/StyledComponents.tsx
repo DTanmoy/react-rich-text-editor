@@ -1,7 +1,10 @@
 import { styled } from "@mui/material/styles";
 import { Box } from "@mui/material";
 
-export const CustomEditable = styled(Box)<{
+export const CustomEditable = styled(Box, {
+  shouldForwardProp: (prop) => 
+    prop !== 'isExpanded' && prop !== 'fontSize' && prop !== 'fontFamily',
+})<{
   isExpanded?: boolean;
   fontSize?: string;
   fontFamily?: string;
@@ -19,6 +22,23 @@ export const CustomEditable = styled(Box)<{
   "& img": {
     cursor: "zoom-in",
     maxWidth: "100%",
+  },
+
+  // Add styles for attachment links and containers
+  "& a[data-attachment-id]": {
+    cursor: "pointer",
+    textDecoration: "none",
+    color: theme.palette.primary.main,
+    fontWeight: 500,
+    "&:hover": {
+      textDecoration: "underline",
+    },
+  },
+  
+  // Style for attachment containers (spans)
+  "& span > a[data-attachment-id]": {
+    display: "inline-block",
+    verticalAlign: "middle",
   },
 
   "&:empty:before": {

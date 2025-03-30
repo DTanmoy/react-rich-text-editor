@@ -74,8 +74,16 @@ import {
   TableContextMenu,
   EmojiDialog,
   ImagePreviewDialog,
+  AttachmentDialog,
 } from "./dialogs";
 import { findAncestorByTagName, getBlocksInRange } from "./EditorUtils";
+import type { AttachmentFile } from "./AttachmentDisplay";
+
+// Update the handleAttachmentConfirm method with proper typing and remove unused variables
+interface FileWithPreview extends File {
+  id: string;
+  previewUrl?: string;
+}
 
 export default function Editor({
   width = "100%",
@@ -142,6 +150,8 @@ export default function Editor({
   const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
   const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
 
   // Store selection manually rather than in React state to avoid re-renders
   const selectionRef = useRef<{
@@ -1855,6 +1865,243 @@ export default function Editor({
     setImagePreviewOpen(false);
   };
 
+  const handleAttachment = () => {
+    setAttachmentDialogOpen(true);
+  };
+
+  const handleAttachmentConfirm = (files: FileWithPreview[]) => {
+    // Convert files from the dialog to attachment objects
+    const newAttachments: AttachmentFile[] = files.map((file) => {
+      let fileUrl;
+      
+      // For images, we can use the previewUrl if available
+      if (file.previewUrl) {
+        fileUrl = file.previewUrl;
+      } else {
+        // For other files, create a blob URL
+        // In a real application, this would be a URL to the uploaded file on your server
+        fileUrl = URL.createObjectURL(file);
+      }
+      
+      return {
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: fileUrl,
+      };
+    });
+    
+    // Store the new attachments in state
+    setAttachments((prevAttachments) => [...prevAttachments, ...newAttachments]);
+    
+    // Insert the attachments into the editor
+    insertAttachmentsIntoEditor(newAttachments);
+  };
+
+  const handleRemoveAttachment = (attachmentId: string) => {
+    setAttachments((prevAttachments) => {
+      // Filter out the attachment to be removed
+      return prevAttachments.filter((attachment) => attachment.id !== attachmentId);
+    });
+    
+    // Find and remove the attachment span from the editor
+    if (editorRef.current) {
+      const attachmentElement = editorRef.current.querySelector(
+        `a[data-attachment-id="${attachmentId}"]`
+      );
+      
+      if (attachmentElement) {
+        // Get the parent span that contains both icon and link
+        const parentSpan = attachmentElement.parentElement;
+        if (parentSpan && parentSpan.tagName === 'SPAN') {
+          // Remove the entire attachment span
+          parentSpan.remove();
+        } else {
+          // Fallback to just removing the link
+          attachmentElement.remove();
+        }
+        
+        // Update content to reflect the removal
+        updateContent();
+      }
+    }
+  };
+
+  const insertAttachmentsIntoEditor = (attachmentsToInsert: AttachmentFile[]) => {
+    if (!editorRef.current) {
+      return;
+    }
+    
+    // Focus the editor to ensure we have focus
+    editorRef.current.focus();
+    
+    // Get current selection - we need to be more careful with selection handling
+    let selection = window.getSelection();
+    let range: Range | null = null;
+    
+    // First try to get the current selection
+    if (selection && selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+      
+      // Verify the selection is within our editor
+      let inEditor = false;
+      let node: Node | null = range.commonAncestorContainer;
+      while (node) {
+        if (node === editorRef.current) {
+          inEditor = true;
+          break;
+        }
+        node = node.parentNode;
+      }
+      
+      // If selection is not in editor, we need to create a new range
+      if (!inEditor) {
+        range = null;
+      }
+    }
+    
+    // If no valid range exists, create one at the current cursor position or at the end
+    if (!range) {
+      range = document.createRange();
+      
+      // Try to place cursor at end of current content
+      if (editorRef.current.lastChild) {
+        range.selectNodeContents(editorRef.current.lastChild);
+        range.collapse(false); // Collapse to end
+      } else {
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false); // Collapse to end
+      }
+      
+      // Apply the new range to selection
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    
+    // Helper function to get file type icon
+    const getFileTypeIcon = (fileType: string): string => {
+      const type = fileType.split('/')[0];
+      switch (type) {
+        case 'image':
+          return '🖼️';
+        case 'application':
+          return fileType.includes('pdf') ? '📄' : '📎';
+        case 'audio':
+          return '🔊';
+        case 'video':
+          return '🎬';
+        case 'text':
+          return '📝';
+        default:
+          return '📎';
+      }
+    };
+    
+    // Create each attachment as a simple text with a link
+    // We'll use a document fragment to batch our insertions
+    const fragment = document.createDocumentFragment();
+    let lastElement: HTMLElement | null = null;
+    
+    attachmentsToInsert.forEach((attachment, index) => {
+      // Create a span to hold the icon and link
+      const attachmentSpan = document.createElement('span');
+      attachmentSpan.style.display = 'inline-flex';
+      attachmentSpan.style.alignItems = 'center';
+      attachmentSpan.style.marginRight = '5px';
+      
+      // Create icon element
+      const iconSpan = document.createElement('span');
+      iconSpan.textContent = getFileTypeIcon(attachment.type);
+      iconSpan.style.marginRight = '4px';
+      iconSpan.style.fontSize = '1.1em';
+      
+      // Create link element for the attachment
+      const linkElement = document.createElement("a");
+      linkElement.href = attachment.url;
+      linkElement.textContent = attachment.name;
+      linkElement.target = "_blank"; // Open in new tab
+      linkElement.rel = "noopener noreferrer"; // Security best practice
+      linkElement.dataset.attachmentId = attachment.id; // Store the attachment ID
+      linkElement.download = attachment.name; // Add download attribute to make it downloadable
+      linkElement.title = "Click to download, double-click to remove"; // Add tooltip for clarity
+      
+      // Add specific styling for attachment links
+      linkElement.style.color = "#1976d2";
+      linkElement.style.textDecoration = "none";
+      linkElement.style.fontWeight = "500";
+      
+      // Add click event to handle file download
+      linkElement.addEventListener('click', (e) => {
+        // We need to prevent the default to handle the download manually
+        // to ensure it works across different browsers
+        e.preventDefault();
+        
+        // Find the attachment in our state
+        const attachmentToDownload = attachments.find(a => a.id === attachment.id);
+        if (attachmentToDownload) {
+          // Create a download link
+          const downloadLink = document.createElement('a');
+          downloadLink.href = attachmentToDownload.url;
+          downloadLink.download = attachmentToDownload.name;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+        }
+      });
+      
+      // Add double-click event to remove the attachment
+      linkElement.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        handleRemoveAttachment(attachment.id);
+      });
+      
+      // Assemble the attachment span
+      attachmentSpan.appendChild(iconSpan);
+      attachmentSpan.appendChild(linkElement);
+      
+      // Add to fragment
+      fragment.appendChild(attachmentSpan);
+      
+      // Add a space after (except for the last one)
+      if (index < attachmentsToInsert.length - 1) {
+        fragment.appendChild(document.createTextNode(" "));
+      }
+      
+      // Keep track of the last element for cursor positioning
+      lastElement = attachmentSpan;
+    });
+    
+    // Now, get the selection again (it might have changed)
+    selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      range = selection.getRangeAt(0);
+      
+      // Insert the fragment at the current position
+      range.deleteContents();
+      range.insertNode(fragment);
+      
+      // Add a space after the last attachment
+      const spaceNode = document.createTextNode(" ");
+      
+      // Position range after the last attachment
+      if (lastElement) {
+        range.setStartAfter(lastElement);
+        range.setEndAfter(lastElement);
+        range.insertNode(spaceNode);
+        
+        // Position cursor after the space
+        range.setStartAfter(spaceNode);
+        range.setEndAfter(spaceNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+    
+    // Update content to reflect the changes
+    updateContent();
+  };
+
   return (
     <Box
       sx={{
@@ -2148,7 +2395,7 @@ export default function Editor({
           </Tooltip>
 
           <Tooltip title="Attach">
-            <IconButton size="small">
+            <IconButton size="small" onClick={handleAttachment}>
               <AttachFileIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -2228,6 +2475,12 @@ export default function Editor({
         open={imagePreviewOpen}
         onClose={handleImagePreviewClose}
         imageElement={selectedImageElement}
+      />
+
+      <AttachmentDialog
+        open={attachmentDialogOpen}
+        onClose={() => setAttachmentDialogOpen(false)}
+        onConfirm={handleAttachmentConfirm}
       />
     </Box>
   );
