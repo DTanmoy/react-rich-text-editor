@@ -757,6 +757,8 @@ export default function Editor({
       th.style.backgroundColor = "#f5f5f5";
       th.style.fontWeight = "bold";
       th.style.textAlign = "left";
+      th.style.minWidth = "50px";
+      th.style.wordBreak = "break-word";
       headerRow.appendChild(th);
     }
 
@@ -776,6 +778,8 @@ export default function Editor({
         cell.style.border = "1px solid #ccc";
         cell.style.padding = "8px";
         cell.style.minWidth = "50px";
+        cell.style.wordBreak = "break-word";
+        cell.style.verticalAlign = "top";
         row.appendChild(cell);
       }
 
@@ -1813,7 +1817,7 @@ export default function Editor({
           ref={editorRef}
           data-placeholder={placeholder}
           isExpanded={isExpanded}
-          fontSize={fontSize}
+          fontSize={typeof fontSize === 'number' ? `${fontSize}px` : fontSize}
           fontFamily={fontFamily}
           onInput={updateContent}
           sx={{

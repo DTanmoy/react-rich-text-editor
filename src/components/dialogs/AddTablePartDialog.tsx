@@ -10,18 +10,29 @@ interface AddTablePartDialogProps {
 }
 
 export default function AddTablePartDialog({ open, onClose, onAddRow, onAddColumn }: AddTablePartDialogProps) {
+  
+  const handleAddRow = () => {
+    onAddRow();
+    onClose();
+  };
+  
+  const handleAddColumn = () => {
+    onAddColumn();
+    onClose();
+  };
+  
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add to Table</DialogTitle>
       <DialogContent>
         <List>
-          <ListItemButton onClick={onAddRow}>
+          <ListItemButton onClick={handleAddRow}>
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
             <ListItemText primary="Add Row" />
           </ListItemButton>
-          <ListItemButton onClick={onAddColumn}>
+          <ListItemButton onClick={handleAddColumn}>
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
