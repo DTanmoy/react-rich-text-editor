@@ -1,5 +1,19 @@
 import { useState, ChangeEvent } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from "@mui/material";
+
+// Material UI
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import { SelectChangeEvent } from "@mui/material";
+
+// Interfaces
 import { ImageOptionsDialogProps } from "../interfaces";
 
 export default function ImageOptionsDialog({ 

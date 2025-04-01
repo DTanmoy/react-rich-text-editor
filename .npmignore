@@ -1,0 +1,23 @@
+# Source files
+src/*
+!src/lib
+
+# Config files
+tsconfig.json
+tsconfig.node.json
+tsconfig.app.json
+vite.config.ts
+eslint.config.js
+
+# IDE files
+.vscode
+.idea
+
+# Development files
+node_modules
+.git
+.gitignore
+
+# Build files not intended for package
+dist/demo
+*.log 

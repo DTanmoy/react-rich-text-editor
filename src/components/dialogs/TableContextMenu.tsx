@@ -1,7 +1,25 @@
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
+/**
+ * React Rich Text Editor
+ * Table Context Menu Component
+ * @author Tanmoy Bhadra
+ */
 
+import React from 'react';
+
+// Material UI
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Divider from "@mui/material/Divider";
+
+// Icons
+import {
+  DeleteIcon,
+  AddIcon,
+} from '../icons';
+
+// Interfaces
 interface TableContextMenuProps {
   anchorEl: HTMLElement | null;
   open: boolean;

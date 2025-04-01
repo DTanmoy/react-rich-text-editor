@@ -1,144 +1,128 @@
 # React Rich Text Editor
 
-**Author:** Tanmoy Bhadra
+A powerful and feature-rich React component for rich text editing with a modern Material-UI interface.
 
-A comprehensive, feature-rich text editor built with React and Material-UI. This editor provides an intuitive interface for creating and editing formatted content with a wide range of styling options and capabilities.
+## Features
 
-## ✨ Features
+- 📝 Rich text formatting (bold, italic, underline, strikethrough)
+- 📋 Lists (bullet and numbered)
+- 🖼️ Image support with resizing and alignment
+- 📊 Table support with context menu
+- 🔗 Link insertion
+- 💻 Code blocks (inline and markdown)
+- 🎨 Text and background colors
+- 📏 Font size control
+- 😊 Emoji picker
+- 📎 File attachments
+- ⌨️ Keyboard shortcuts
+- 🔄 Expandable/collapsible toolbar
+- 🎯 Responsive design
+- 🎨 Material-UI theming support
 
-- **Rich Text Formatting**
-  - Basic formatting (bold, italic, underline, strikethrough)
-  - Text color and highlight color options
-  - Font size adjustment
-  - Quote blocks with proper styling
-  - Clear formatting option
-
-- **Lists and Structure**
-  - Bullet lists with customizable styling
-  - Numbered lists with proper formatting
-  - Indentation control (increase/decrease)
-  - Tab key support for nested lists
-
-- **Media Integration**
-  - Image insertion with URL
-  - Image resizing with interactive handles
-  - Image alignment options
-  - File attachments with preview and download options
-
-- **Advanced Components**
-  - Table insertion and editing
-  - Table context menu for easy manipulation
-  - Code blocks with syntax highlighting
-  - Horizontal rule insertion
-
-- **Interactive Experience**
-  - Emoji selector
-  - Link creation and management
-  - Selection-aware formatting
-  - Format indication (active state for formatting buttons)
-  - Send button for content submission
-
-## 🚀 Installation
+## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/username/react-rich-text-editor.git
-
-# Navigate to the project directory
-cd react-rich-text-editor
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
+npm install tanmoy-react-rich-text-editor
+# or
+yarn add tanmoy-react-rich-text-editor
 ```
 
-## 💻 Usage
+## Usage
 
 ```jsx
-import { Editor } from 'react-rich-text-editor';
+import { Editor } from 'tanmoy-react-rich-text-editor';
 
-function MyComponent() {
-  const [content, setContent] = useState("<p>Hello World!</p>");
-  
-  const handleChange = (newContent) => {
-    setContent(newContent);
-    console.log("Content updated:", newContent);
+function App() {
+  const handleChange = (content) => {
+    console.log('Editor content:', content);
   };
-  
+
   const handleSend = () => {
-    console.log("Sending content:", content);
-    // Process the content as needed
+    // Handle send action
+    console.log('Send clicked');
   };
 
   return (
-    <Editor 
-      value={content}
+    <Editor
+      width="100%"
+      placeholder="Type a message..."
+      value=""
       onChange={handleChange}
-      placeholder="Type your message here..."
-      borderColor="#ccc"
-      fontSize={16}
-      fontFamily="Arial, sans-serif"
       onSend={handleSend}
+      borderColor="#e0e0e0"
+      fontSize="14px"
+      fontFamily="Arial, sans-serif"
+      defaultExpanded={false}
+      attachments={true}
     />
   );
 }
 ```
 
-## 📝 Editor Props
+## Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `width` | string \| number | '100%' | Width of the editor |
-| `placeholder` | string | 'Type a message' | Placeholder text when editor is empty |
-| `value` | string | '' | HTML content for the editor |
-| `onChange` | function | - | Callback when editor content changes |
-| `borderColor` | string | - | Border color of the editor container |
-| `fontSize` | string \| number | - | Font size for editor content |
-| `fontFamily` | string | - | Font family for editor content |
-| `onSend` | function | - | Callback when send button is clicked |
+| `width` | string | "100%" | Width of the editor container |
+| `placeholder` | string | "Type a message" | Placeholder text when editor is empty |
+| `value` | string | "" | Initial content of the editor |
+| `onChange` | function | - | Callback fired when content changes |
+| `onSend` | function | - | Callback fired when send button is clicked |
+| `borderColor` | string | - | Custom border color (falls back to theme) |
+| `fontSize` | string/number | - | Custom font size |
+| `fontFamily` | string | - | Custom font family |
+| `defaultExpanded` | boolean | false | Whether editor starts expanded |
+| `attachments` | boolean | true | Whether to show attachment button |
+| `onDelete` | function | - | Callback fired when clear all is clicked |
 
-## 🔧 Development
+## Keyboard Shortcuts
 
-```bash
-# Run development server
-npm run dev
+- `Ctrl/Cmd + B`: Bold
+- `Ctrl/Cmd + I`: Italic
+- `Ctrl/Cmd + U`: Underline
+- `Ctrl/Cmd + K`: Insert Link
 
-# Build for production
-npm run build
+## Image Features
 
-# Preview the build
-npm run preview
+- Drag handles for resizing
+- Context menu (right-click) for alignment and options
+- Ctrl/Cmd + Click for quick options
+- Click to preview
+- Support for custom alignment and sizing
 
-# Run linting
-npm run lint
-```
+## Table Features
 
-## 📋 Browser Support
+- Context menu for table operations
+- Add/remove rows and columns
+- Delete entire table
+- Responsive design
 
-The editor is compatible with:
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## Code Block Features
 
-## 🤝 Contributing
+- Inline code formatting
+- Markdown code blocks with language support
+- Syntax highlighting support
+
+## Styling
+
+The editor uses Material-UI theming and can be customized through:
+
+1. Theme provider
+2. Custom CSS
+3. Component props
+
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## License
 
-## 📄 License
+MIT License - feel free to use this component in your projects.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Author
 
-## 📚 Credits
+Tanmoy Bhadra
 
-- Built with [React](https://reactjs.org/)
-- UI components from [Material-UI](https://mui.com/)
-- Developed by Tanmoy Bhadra 
+## Support
+
+If you encounter any issues or have questions, please open an issue in the GitHub repository. 

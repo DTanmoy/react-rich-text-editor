@@ -5,14 +5,16 @@
  */
 import React from "react";
 import { Box, Paper, Typography, styled, IconButton, Tooltip } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ImageIcon from '@mui/icons-material/Image';
-import DescriptionIcon from '@mui/icons-material/Description';
-import AudioFileIcon from '@mui/icons-material/AudioFile';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import DownloadIcon from '@mui/icons-material/Download';
-import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  PictureAsPdfIcon,
+  ImageIcon,
+  DescriptionIcon,
+  AudioFileIcon,
+  VideocamIcon,
+  AttachFileIcon,
+  DownloadIcon,
+  DeleteIcon,
+} from './icons';
 
 /**
  * Styled container for displaying an attachment

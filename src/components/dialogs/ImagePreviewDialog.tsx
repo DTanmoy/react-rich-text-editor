@@ -1,9 +1,26 @@
+/**
+ * React Rich Text Editor
+ * Image Preview Dialog Component
+ * @author Tanmoy Bhadra
+ */
+
 import React from 'react';
-import { Dialog, DialogContent, IconButton, Fade, styled, Box } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+
+// Material UI
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import IconButton from "@mui/material/IconButton";
+import Fade from "@mui/material/Fade";
+import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+
+// Icons
+import {
+  CloseIcon,
+  DownloadIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+} from '../icons';
 
 const PreviewContainer = styled(DialogContent)(({ theme }) => ({
   padding: theme.spacing(2),

@@ -1,31 +1,54 @@
-import { useState } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
-import { CodeDialogProps } from "../interfaces";
+/**
+ * React Rich Text Editor
+ * Code Dialog Component
+ * @author Tanmoy Bhadra
+ */
 
-export default function CodeDialog({ open, onClose, onConfirm }: CodeDialogProps) {
+import { useState } from "react";
+
+// Material UI
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import { SelectChangeEvent } from "@mui/material";
+
+// Interfaces
+import { CodeDialogProps } from "../interfaces";
+export default function CodeDialog({
+  open,
+  onClose,
+  onConfirm,
+}: CodeDialogProps) {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
-  
+
   const handleConfirm = () => {
     onConfirm(code, language);
     // Reset
     setCode("");
     onClose();
   };
-  
+
   const handleDialogClose = () => {
     setCode("");
     onClose();
   };
-  
+
   const handleLanguageChange = (e: SelectChangeEvent) => {
     setLanguage(e.target.value);
   };
-  
+
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleDialogClose} 
+    <Dialog
+      open={open}
+      onClose={handleDialogClose}
       aria-labelledby="code-dialog-title"
       fullWidth
       maxWidth="md"
@@ -63,7 +86,7 @@ export default function CodeDialog({ open, onClose, onConfirm }: CodeDialogProps
             <MenuItem value="plaintext">Plain Text</MenuItem>
           </Select>
         </FormControl>
-        
+
         <TextField
           autoFocus
           margin="dense"
@@ -77,20 +100,16 @@ export default function CodeDialog({ open, onClose, onConfirm }: CodeDialogProps
           onChange={(e) => setCode(e.target.value)}
           placeholder="Enter your code here..."
           InputProps={{
-            style: { fontFamily: "monospace" }
+            style: { fontFamily: "monospace" },
           }}
         />
       </DialogContent>
       <DialogActions>
         <Button onClick={handleDialogClose}>Cancel</Button>
-        <Button 
-          onClick={handleConfirm}
-          color="primary"
-          disabled={!code.trim()}
-        >
+        <Button onClick={handleConfirm} color="primary" disabled={!code.trim()}>
           Insert
         </Button>
       </DialogActions>
     </Dialog>
   );
-} 
+}

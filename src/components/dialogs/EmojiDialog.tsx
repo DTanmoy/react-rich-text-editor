@@ -1,12 +1,19 @@
+/**
+ * React Rich Text Editor
+ * Emoji Dialog Component
+ * @author Tanmoy Bhadra
+ */
+
 import React from 'react';
-import { 
-  Popover,
-  Grid, 
-  Paper, 
-  IconButton, 
-  Typography, 
-  styled 
-} from '@mui/material';
+// Material UI
+import Popover from '@mui/material/Popover'
+import Grid from '@mui/material/Grid'
+import Paper from '@mui/material/Paper'
+import IconButton from '@mui/material/IconButton'
+import Typography from '@mui/material/Typography'
+import { styled } from '@mui/material/styles';
+
+// Icons
 import CloseIcon from '@mui/icons-material/Close';
 
 const categories = [

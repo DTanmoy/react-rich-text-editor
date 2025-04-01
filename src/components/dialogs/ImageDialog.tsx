@@ -1,5 +1,17 @@
 import { useState, useRef, ChangeEvent } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Divider, Typography } from "@mui/material";
+
+// Material UI
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Typography from "@mui/material/Typography";
+import OutlinedInput from "@mui/material/OutlinedInput";
+
+// Interfaces
 import { ImageDialogProps } from "../interfaces";
 
 export default function ImageDialog({ open, onClose, onConfirm }: ImageDialogProps) {
@@ -85,33 +97,31 @@ export default function ImageDialog({ open, onClose, onConfirm }: ImageDialogPro
         
         <Divider sx={{ my: 2 }}>OR</Divider>
         
-        <TextField
-          margin="dense"
+        <OutlinedInput
+          size="small"
           id="url"
-          label="Image URL"
+          placeholder="Image URL"
           type="url"
           fullWidth
-          variant="outlined"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           sx={{ mb: 2 }}
         />
         
-        <TextField
-          margin="dense"
+        <OutlinedInput
+          size="small"
           id="alt"
-          label="Alt Text"
+          placeholder="Alt Text"
           type="text"
           fullWidth
-          variant="outlined"
           value={alt}
           onChange={(e) => setAlt(e.target.value)}
-          helperText="Descriptive text for screen readers and if image fails to load"
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleDialogClose}>Cancel</Button>
+        <Button size="small" onClick={handleDialogClose}>Cancel</Button>
         <Button 
+          size="small"
           onClick={handleConfirm}
           color="primary"
           disabled={!url.trim()}

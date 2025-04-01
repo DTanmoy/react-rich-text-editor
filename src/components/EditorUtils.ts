@@ -1,6 +1,6 @@
 /**
  * React Rich Text Editor
- * Editor Utility Functions
+ * Editor Utilities
  * @author Tanmoy Bhadra
  */
 

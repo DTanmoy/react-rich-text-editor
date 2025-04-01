@@ -25,6 +25,12 @@ export interface EditorProps {
   fontFamily?: string;
   /** Callback fired when the send button is clicked */
   onSend?: () => void;
+  /** Default expanded state of the editor */
+  defaultExpanded?: boolean;
+  /** Callback fired when the delete operation is confirmed */
+  onDelete?: () => void;
+  /** Whether the editor has attachments */
+  attachments?: boolean;
 }
 
 /**

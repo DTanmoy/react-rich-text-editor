@@ -1,4 +1,14 @@
-import { Box, Popover, Button } from "@mui/material";
+/**
+ * React Rich Text Editor
+ * Highlight Color Dialog Component
+ * @author Tanmoy Bhadra
+ */
+
+import React from 'react';
+// Material UI
+import Popover from '@mui/material/Popover'
+import Button from '@mui/material/Button'
+import Box from '@mui/material/Box'
 
 interface HighlightColorDialogProps {
   open: boolean;

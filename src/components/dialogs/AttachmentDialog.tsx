@@ -1,31 +1,41 @@
+/**
+ * React Rich Text Editor
+ * Attachment Dialog Component
+ * @author Tanmoy Bhadra
+ */
+
 import React, { useState, useRef } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  Typography, 
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  ListItemIcon,
-  Box,
-  styled,
-  Divider,
-  LinearProgress
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ImageIcon from '@mui/icons-material/Image';
-import DescriptionIcon from '@mui/icons-material/Description';
-import AudioFileIcon from '@mui/icons-material/AudioFile';
-import VideocamIcon from '@mui/icons-material/Videocam';
+
+// Material UI
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Divider from '@mui/material/Divider'
+import { styled } from '@mui/material/styles';
+import LinearProgress from '@mui/material/LinearProgress';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+
+// Icons
+import {
+  ImageIcon,
+  PictureAsPdfIcon,
+  DescriptionIcon,
+  AudioFileIcon,
+  VideocamIcon,
+  AttachFileIcon,
+  CloseIcon,
+  FileUploadIcon,
+  DeleteIcon,
+} from '../icons';
 
 /**
  * Visually hidden input component for file uploads
