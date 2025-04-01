@@ -35,15 +35,17 @@ export const CustomEditable = styled(Box, {
   isExpanded?: boolean;
   fontSize?: string;
   fontFamily?: string;
-}>(({ isExpanded, fontSize, fontFamily, theme }) => ({
+}>(({ theme, isExpanded, fontSize, fontFamily }) => ({
   width: "100%",
-  padding: "8px 16px",
+  padding: "8px 40px 8px 16px",
   outline: "none",
   minHeight: isExpanded ? "200px" : "40px",
   maxHeight: isExpanded ? "none" : "40px",
   overflowY: isExpanded ? "auto" : "hidden",
   fontFamily: fontFamily || "inherit",
   fontSize: fontSize || "inherit",
+  textAlign: "left",
+  verticalAlign: "top",
   
   // Add style for images to show cursor:zoom-in to indicate clickability
   "& img": {
@@ -73,11 +75,15 @@ export const CustomEditable = styled(Box, {
     color: theme.palette.text.secondary,
     pointerEvents: "none",
     display: "block",
+    position: "absolute",
+    top: "8px",
+    left: "16px",
   },
 
   wordBreak: "break-word",
   flexGrow: 1,
   transition: "min-height 0.2s ease",
+  position: "relative",
 
   "& a": {
     color: "#1976d2",

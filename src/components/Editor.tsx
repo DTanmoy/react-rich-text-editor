@@ -10,49 +10,53 @@ import {
   useEffect,
   MouseEvent as ReactMouseEvent,
 } from "react";
+
+// mui components
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
+import Collapse from "@mui/material/Collapse";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import { useTheme } from "@mui/material/styles";
+import Toolbar from "@mui/material/Toolbar";
+import Box from "@mui/material/Box";
+
+// Import all icons from the icons file
 import {
-  Box,
-  IconButton,
-  Toolbar,
-  Divider,
-  Collapse,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Tooltip,
-  useTheme,
-} from "@mui/material";
-import FormatBoldIcon from "@mui/icons-material/FormatBold";
-import FormatItalicIcon from "@mui/icons-material/FormatItalic";
-import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
-import FormatStrikethroughIcon from "@mui/icons-material/FormatStrikethrough";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
-import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
-import LinkIcon from "@mui/icons-material/Link";
-import ImageIcon from "@mui/icons-material/Image";
-import CodeIcon from "@mui/icons-material/Code";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FormatClearIcon from "@mui/icons-material/FormatClear";
-import FormatIndentDecreaseIcon from "@mui/icons-material/FormatIndentDecrease";
-import FormatIndentIncreaseIcon from "@mui/icons-material/FormatIndentIncrease";
-import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
-import TableChartIcon from "@mui/icons-material/TableChart";
-import GridOnIcon from "@mui/icons-material/GridOn";
-import FormatAlignLeftIcon from "@mui/icons-material/FormatAlignLeft";
-import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
-import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
-import CropIcon from "@mui/icons-material/Crop";
-import FormatColorFillIcon from "@mui/icons-material/FormatColorFill";
-import FormatColorTextIcon from "@mui/icons-material/FormatColorText";
-import FormatSizeIcon from "@mui/icons-material/FormatSize";
-import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+  FormatBoldIcon,
+  FormatItalicIcon,
+  FormatUnderlinedIcon,
+  FormatStrikethroughIcon,
+  FormatListBulletedIcon,
+  FormatListNumberedIcon,
+  FormatQuoteIcon,
+  FormatClearIcon,
+  FormatIndentDecreaseIcon,
+  FormatIndentIncreaseIcon,
+  FormatAlignLeftIcon,
+  FormatAlignCenterIcon,
+  FormatAlignRightIcon,
+  FormatSizeIcon,
+  FormatColorFillIcon,
+  FormatColorTextIcon,
+  LinkIcon,
+  ImageIcon,
+  CodeIcon,
+  TableChartIcon,
+  GridOnIcon,
+  CropIcon,
+  EmojiEmotionsIcon,
+  AttachFileIcon,
+  MoreHorizIcon,
+  SendIcon,
+  DeleteIcon,
+  ExpandLessIcon,
+  ExpandMoreIcon,
+  HorizontalRuleIcon,
+} from "./icons";
 
 import { EditorProps, HandlePosition, CSSPositionProperty } from "./interfaces";
 import { CustomEditable } from "./StyledComponents";
@@ -88,9 +92,12 @@ export default function Editor({
   fontSize,
   fontFamily,
   onSend,
+  defaultExpanded = false,
+  onDelete,
+  attachments: showAttachments = true, // Rename prop to showAttachments
 }: EditorProps) {
   const theme = useTheme();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded); // Use the prop value
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -135,15 +142,18 @@ export default function Editor({
   );
   const codeMenuOpen = Boolean(codeMenuAnchorEl);
   const [savedSelection, setSavedSelection] = useState<Range | null>(null);
-  const [fontColorDialogAnchorEl, setFontColorDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const [fontColorDialogAnchorEl, setFontColorDialogAnchorEl] =
+    useState<HTMLElement | null>(null);
   const fontColorDialogOpen = Boolean(fontColorDialogAnchorEl);
-  const [highlightColorDialogAnchorEl, setHighlightColorDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const [highlightColorDialogAnchorEl, setHighlightColorDialogAnchorEl] =
+    useState<HTMLElement | null>(null);
   const highlightColorDialogOpen = Boolean(highlightColorDialogAnchorEl);
   const [fontSizeMenuAnchorEl, setFontSizeMenuAnchorEl] =
     useState<null | HTMLElement>(null);
   const fontSizeMenuOpen = Boolean(fontSizeMenuAnchorEl);
   const [emojiDialogOpen, setEmojiDialogOpen] = useState(false);
-  const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] = useState<HTMLElement | null>(null);
+  const [emojiDialogAnchorEl, setEmojiDialogAnchorEl] =
+    useState<HTMLElement | null>(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
@@ -152,7 +162,7 @@ export default function Editor({
     italic: false,
     underline: false,
     strikethrough: false,
-    quote: false
+    quote: false,
   });
 
   // Store selection manually rather than in React state to avoid re-renders
@@ -162,6 +172,24 @@ export default function Editor({
     endContainer: Node | null;
     endOffset: number;
   } | null>(null);
+
+  // Add this ref near the top of the component with other refs
+  const isUserInputRef = useRef(false);
+
+  // Add this ref near the top of the component with other refs
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Add this ref near the top of the component with other refs
+  const formatStatusRef = useRef({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    quote: false,
+  });
+
+  const [imageContextMenuAnchorEl, setImageContextMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const imageContextMenuOpen = Boolean(imageContextMenuAnchorEl);
 
   // Function to save the current selection more reliably
   const saveSelectionRange = () => {
@@ -174,7 +202,6 @@ export default function Editor({
         endContainer: range.endContainer,
         endOffset: range.endOffset,
       };
-      console.log("Saved selection range manually:", selectionRef.current);
       return true;
     }
     return false;
@@ -231,7 +258,6 @@ export default function Editor({
 
               selection.removeAllRanges();
               selection.addRange(range);
-              console.log("Restored selection range manually");
               return true;
             }
           }
@@ -240,87 +266,104 @@ export default function Editor({
         console.error("Error restoring selection range:", e);
       }
     }
-    console.log("Failed to restore selection range");
     return false;
   };
 
-  useEffect(() => {
-    if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value;
-    }
-  }, [value]);
-
-  const handleMenuClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-    console.log("Editor expanded:", !isExpanded);
-  };
-
-  const handleSend = () => {
-    if (editorRef.current) {
-      const content = editorRef.current.innerHTML;
-      console.log("Editor content sent:", content);
-
-      if (onSend) {
-        onSend();
-      }
-    }
+  // Utility function to normalize HTML for comparisons
+  const normalizeHTML = (html: string): string => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    return tempDiv.innerHTML;
   };
 
   // Add this helper function before updateContent function
   const getCleanContent = (editorElement: HTMLElement): string => {
     // Create a clone of the editor content
-    const tempDiv = document.createElement('div');
+    const tempDiv = document.createElement("div");
     tempDiv.innerHTML = editorElement.innerHTML;
-    
+
     // Remove all resize handles and containers from the clone
-    const resizeHandles = tempDiv.querySelectorAll('.resize-handles-container, .resize-handle');
-    resizeHandles.forEach(handle => {
+    const resizeHandles = tempDiv.querySelectorAll(
+      ".resize-handles-container, .resize-handle"
+    );
+    resizeHandles.forEach((handle) => {
       if (handle.parentNode) {
         handle.parentNode.removeChild(handle);
       }
     });
-    
+
     return tempDiv.innerHTML;
   };
 
+  // Modify the updateContent function to use debouncing
   const updateContent = () => {
     if (editorRef.current && onChange) {
-      // Get the content without the resize handles
-      const content = getCleanContent(editorRef.current);
-      
-      onChange(content);
-      console.log("Content updated:", content);
+      // Clear any existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+
+      // Set a new timeout
+      debounceTimeoutRef.current = setTimeout(() => {
+        // Get the content without the resize handles
+        const content = getCleanContent(editorRef.current!);
+        
+        // Only call onChange if the content is different from the current value
+        const normalizedContent = normalizeHTML(content);
+        const normalizedValue = normalizeHTML(value);
+        
+        if (normalizedContent !== normalizedValue) {
+          isUserInputRef.current = true;
+          onChange(content);
+        }
+      }, 100); // Debounce for 100ms
     }
   };
+
+  // Add cleanup for the debounce timeout
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Modify the useEffect for value changes
+  useEffect(() => {
+    if (editorRef.current && !isUserInputRef.current) {
+      const normalizedValue = normalizeHTML(value);
+      const normalizedEditor = normalizeHTML(editorRef.current.innerHTML);
+
+      // Only update if the content is actually different after normalization
+      if (normalizedValue !== normalizedEditor) {
+        editorRef.current.innerHTML = value;
+      }
+    }
+    // Reset the flag after the effect
+    isUserInputRef.current = false;
+  }, [value]);
 
   // Add the format status check function here
   const checkFormatStatus = () => {
     if (!editorRef.current) return;
-    
+
     // Check if the current selection is inside a blockquote
     const isInBlockquote = () => {
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return false;
-      
+
       const range = selection.getRangeAt(0);
       let node: Node | null = range.commonAncestorContainer;
-      
+
       // If it's a text node, get its parent
       if (node.nodeType === 3 && node.parentNode) {
         node = node.parentNode;
       }
-      
+
       // Check if the node is or is inside a blockquote
       while (node && node !== editorRef.current) {
-        if (node.nodeName.toLowerCase() === 'blockquote') {
+        if (node.nodeName.toLowerCase() === "blockquote") {
           return true;
         }
         if (node.parentNode) {
@@ -329,17 +372,29 @@ export default function Editor({
           break;
         }
       }
-      
+
       return false;
     };
-    
-    setActiveFormats({
-      bold: document.queryCommandState('bold'),
-      italic: document.queryCommandState('italic'),
-      underline: document.queryCommandState('underline'),
-      strikethrough: document.queryCommandState('strikeThrough'),
-      quote: isInBlockquote()
-    });
+
+    const newFormats = {
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
+      strikethrough: document.queryCommandState("strikeThrough"),
+      quote: isInBlockquote(),
+    };
+
+    // Only update state if the format status has actually changed
+    if (
+      newFormats.bold !== formatStatusRef.current.bold ||
+      newFormats.italic !== formatStatusRef.current.italic ||
+      newFormats.underline !== formatStatusRef.current.underline ||
+      newFormats.strikethrough !== formatStatusRef.current.strikethrough ||
+      newFormats.quote !== formatStatusRef.current.quote
+    ) {
+      formatStatusRef.current = newFormats;
+      setActiveFormats(newFormats);
+    }
   };
 
   const execCommand = (
@@ -378,7 +433,6 @@ export default function Editor({
 
         // Update the parent component with new content
         updateContent();
-        console.log(`Applied ${actionName} formatting`);
       } catch (error) {
         console.error(`Error applying ${actionName} formatting:`, error);
       }
@@ -395,32 +449,159 @@ export default function Editor({
 
       const range = selection.getRangeAt(0);
 
+      // Helper function to check if a node has the specified format
+      const hasFormat = (node: Node, format: string): boolean => {
+        let current: Node | null = node;
+        while (current && current !== editorRef.current) {
+          if (current.nodeType === 1) { // Element node
+            const element = current as HTMLElement;
+            switch (format) {
+              case 'bold':
+                if (element.tagName === 'STRONG' || element.tagName === 'B') return true;
+                break;
+              case 'italic':
+                if (element.tagName === 'EM' || element.tagName === 'I') return true;
+                break;
+              case 'underline':
+                if (element.tagName === 'U') return true;
+                break;
+              case 'strikeThrough':
+                if (element.tagName === 'S' || element.tagName === 'STRIKE') return true;
+                break;
+            }
+          }
+          current = current.parentNode;
+        }
+        return false;
+      };
+
+      // Helper function to remove format
+      const removeFormat = (node: Node, format: string) => {
+        let current: Node | null = node;
+        while (current && current !== editorRef.current) {
+          if (current.nodeType === 1) { // Element node
+            const element = current as HTMLElement;
+            switch (format) {
+              case 'bold':
+                if (element.tagName === 'STRONG' || element.tagName === 'B') {
+                  const parent = element.parentNode;
+                  if (parent) {
+                    while (element.firstChild) {
+                      parent.insertBefore(element.firstChild, element);
+                    }
+                    parent.removeChild(element);
+                  }
+                }
+                break;
+              case 'italic':
+                if (element.tagName === 'EM' || element.tagName === 'I') {
+                  const parent = element.parentNode;
+                  if (parent) {
+                    while (element.firstChild) {
+                      parent.insertBefore(element.firstChild, element);
+                    }
+                    parent.removeChild(element);
+                  }
+                }
+                break;
+              case 'underline':
+                if (element.tagName === 'U') {
+                  const parent = element.parentNode;
+                  if (parent) {
+                    while (element.firstChild) {
+                      parent.insertBefore(element.firstChild, element);
+                    }
+                    parent.removeChild(element);
+                  }
+                }
+                break;
+              case 'strikeThrough':
+                if (element.tagName === 'S' || element.tagName === 'STRIKE') {
+                  const parent = element.parentNode;
+                  if (parent) {
+                    while (element.firstChild) {
+                      parent.insertBefore(element.firstChild, element);
+                    }
+                    parent.removeChild(element);
+                  }
+                }
+                break;
+            }
+          }
+          current = current.parentNode;
+        }
+      };
+
       switch (command) {
         case "bold": {
           if (range.collapsed) return false;
-          const boldElement = document.createElement("strong");
-          applyInlineFormatting(range, boldElement);
+          const startNode = range.startContainer;
+          
+          // Check if the selection already has the format
+          const hasBold = hasFormat(startNode, 'bold');
+          
+          if (hasBold) {
+            // Remove bold formatting
+            removeFormat(startNode, 'bold');
+          } else {
+            // Apply bold formatting
+            const boldElement = document.createElement("strong");
+            applyInlineFormatting(range, boldElement);
+          }
           return true;
         }
 
         case "italic": {
           if (range.collapsed) return false;
-          const italicElement = document.createElement("em");
-          applyInlineFormatting(range, italicElement);
+          const startNode = range.startContainer;
+          
+          // Check if the selection already has the format
+          const hasItalic = hasFormat(startNode, 'italic');
+          
+          if (hasItalic) {
+            // Remove italic formatting
+            removeFormat(startNode, 'italic');
+          } else {
+            // Apply italic formatting
+            const italicElement = document.createElement("em");
+            applyInlineFormatting(range, italicElement);
+          }
           return true;
         }
 
         case "underline": {
           if (range.collapsed) return false;
-          const underlineElement = document.createElement("u");
-          applyInlineFormatting(range, underlineElement);
+          const startNode = range.startContainer;
+          
+          // Check if the selection already has the format
+          const hasUnderline = hasFormat(startNode, 'underline');
+          
+          if (hasUnderline) {
+            // Remove underline formatting
+            removeFormat(startNode, 'underline');
+          } else {
+            // Apply underline formatting
+            const underlineElement = document.createElement("u");
+            applyInlineFormatting(range, underlineElement);
+          }
           return true;
         }
 
         case "strikeThrough": {
           if (range.collapsed) return false;
-          const strikeElement = document.createElement("s");
-          applyInlineFormatting(range, strikeElement);
+          const startNode = range.startContainer;
+          
+          // Check if the selection already has the format
+          const hasStrike = hasFormat(startNode, 'strikeThrough');
+          
+          if (hasStrike) {
+            // Remove strikethrough formatting
+            removeFormat(startNode, 'strikeThrough');
+          } else {
+            // Apply strikethrough formatting
+            const strikeElement = document.createElement("s");
+            applyInlineFormatting(range, strikeElement);
+          }
           return true;
         }
 
@@ -488,22 +669,25 @@ export default function Editor({
 
   const handleBold = () => {
     execCommand("bold", "", "Bold");
-    setActiveFormats(prev => ({ ...prev, bold: !prev.bold }));
+    setActiveFormats((prev) => ({ ...prev, bold: !prev.bold }));
   };
-  
+
   const handleItalic = () => {
     execCommand("italic", "", "Italic");
-    setActiveFormats(prev => ({ ...prev, italic: !prev.italic }));
+    setActiveFormats((prev) => ({ ...prev, italic: !prev.italic }));
   };
-  
+
   const handleUnderline = () => {
     execCommand("underline", "", "Underline");
-    setActiveFormats(prev => ({ ...prev, underline: !prev.underline }));
+    setActiveFormats((prev) => ({ ...prev, underline: !prev.underline }));
   };
-  
+
   const handleStrikethrough = () => {
     execCommand("strikeThrough", "", "Strikethrough");
-    setActiveFormats(prev => ({ ...prev, strikethrough: !prev.strikethrough }));
+    setActiveFormats((prev) => ({
+      ...prev,
+      strikethrough: !prev.strikethrough,
+    }));
   };
 
   const handleBulletList = () => {
@@ -540,11 +724,11 @@ export default function Editor({
         listItem.appendChild(document.createTextNode("\u200B")); // Add zero-width space to allow cursor positioning
         listItem.style.minHeight = "1.5em"; // Ensure the list item has height
         listElement.appendChild(listItem);
-        
+
         // Insert the list structure
         editorRef.current.innerHTML = "";
         editorRef.current.appendChild(listElement);
-        
+
         // Set cursor in the empty list item
         const range = document.createRange();
         range.setStart(listItem, 0);
@@ -554,11 +738,11 @@ export default function Editor({
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        
+
         updateContent();
         return true;
       }
-      
+
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return false;
 
@@ -688,17 +872,17 @@ export default function Editor({
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         let node = range.commonAncestorContainer;
-        
+
         // If it's a text node, get its parent
         if (node.nodeType === 3 && node.parentNode) {
           node = node.parentNode;
         }
-        
+
         // Find the blockquote
         let blockquote = null;
         let current = node;
         while (current && current !== editorRef.current) {
-          if (current.nodeName.toLowerCase() === 'blockquote') {
+          if (current.nodeName.toLowerCase() === "blockquote") {
             blockquote = current;
             break;
           }
@@ -708,20 +892,20 @@ export default function Editor({
             break;
           }
         }
-        
+
         // If we found a blockquote, replace it with its contents
         if (blockquote && blockquote.parentNode) {
           // Create a temporary container
-          const p = document.createElement('p');
-          
+          const p = document.createElement("p");
+
           // Move all children from blockquote to the new paragraph
           while (blockquote.firstChild) {
             p.appendChild(blockquote.firstChild);
           }
-          
+
           // Replace blockquote with paragraph
           blockquote.parentNode.replaceChild(p, blockquote);
-          
+
           // Update content
           updateContent();
         }
@@ -730,9 +914,9 @@ export default function Editor({
       // Apply blockquote formatting
       execCommand("formatBlock", "<blockquote>", "Quote");
     }
-    
+
     // Toggle quote state - this will be corrected by checkFormatStatus on next selection change
-    setActiveFormats(prev => ({ ...prev, quote: !prev.quote }));
+    setActiveFormats((prev) => ({ ...prev, quote: !prev.quote }));
   };
 
   const handleCodeButtonClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -998,16 +1182,9 @@ export default function Editor({
   };
 
   const handleAddColumn = () => {
-    console.log("handleAddColumn called, selectedTableElement:", selectedTableElement);
-    
     if (selectedTableElement.table && selectedTableElement.cell) {
       const table = selectedTableElement.table;
       const cellIndex = selectedTableElement.cell.cellIndex;
-      
-      console.log("Adding column, details:", { 
-        tableRows: table.rows.length,
-        cellIndex 
-      });
 
       // Calculate the column number (for header text)
       const columnNumber = cellIndex + 2; // +1 because we're adding after, +1 for 1-based numbering
@@ -1016,14 +1193,20 @@ export default function Editor({
       const rows = table.rows;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const isHeaderRow = findAncestorByTagName(row, "thead") !== null || row.querySelector("th") !== null;
-        
+        const isHeaderRow =
+          findAncestorByTagName(row, "thead") !== null ||
+          row.querySelector("th") !== null;
+
         // Create appropriate cell type (th for header, td for body)
-        const newCell = isHeaderRow ? document.createElement("th") : document.createElement("td");
-        
+        const newCell = isHeaderRow
+          ? document.createElement("th")
+          : document.createElement("td");
+
         // Set cell content based on whether it's a header or not
-        newCell.textContent = isHeaderRow ? `Header ${columnNumber}` : `New Cell`;
-        
+        newCell.textContent = isHeaderRow
+          ? `Header ${columnNumber}`
+          : `New Cell`;
+
         // Add styling
         newCell.style.border = `1px solid ${theme.palette.divider}`;
         newCell.style.padding = "8px";
@@ -1051,22 +1234,13 @@ export default function Editor({
   };
 
   const handleAddRow = () => {
-    console.log("handleAddRow called, selectedTableElement:", selectedTableElement);
-    
     if (selectedTableElement.table && selectedTableElement.row) {
       const table = selectedTableElement.table;
       const rowIndex = selectedTableElement.row.rowIndex;
-      
+
       // Get tbody, creating it if needed
       const tbody = ensureTableBodyExists(table);
       const thead = table.querySelector("thead");
-      
-      console.log("Adding row, details:", { 
-        tableRows: table.rows.length,
-        rowIndex,
-        hasTbody: !!tbody,
-        hasThead: !!thead
-      });
 
       // Create a new row
       const newRow = document.createElement("tr");
@@ -1093,8 +1267,11 @@ export default function Editor({
       } else {
         // For tbody rows, insert after the selected row
         const tbodyRowIndex = rowIndex - (thead ? thead.rows.length : 0);
-        const nextRow = tbodyRowIndex + 1 < tbody.rows.length ? tbody.rows[tbodyRowIndex + 1] : null;
-        
+        const nextRow =
+          tbodyRowIndex + 1 < tbody.rows.length
+            ? tbody.rows[tbodyRowIndex + 1]
+            : null;
+
         if (nextRow) {
           tbody.insertBefore(newRow, nextRow);
         } else {
@@ -1119,6 +1296,9 @@ export default function Editor({
     if (editorRef.current) {
       editorRef.current.innerHTML = "";
       updateContent();
+      if (onDelete) {
+        onDelete();
+      }
     }
   };
 
@@ -1170,36 +1350,31 @@ export default function Editor({
       } else {
         // Close image menu if clicking elsewhere
         setImageMenuAnchorEl(null);
+        setImageContextMenuAnchorEl(null);
 
         // Check if clicking on or inside a table cell
         const findTableElements = (element: HTMLElement) => {
-          const cell = findAncestorByTagName(element, "td") || findAncestorByTagName(element, "th");
+          const cell =
+            findAncestorByTagName(element, "td") ||
+            findAncestorByTagName(element, "th");
           if (!cell) return null;
-          
+
           const row = findAncestorByTagName(cell, "tr");
           if (!row) return null;
-          
+
           const table = findAncestorByTagName(row, "table");
           if (!table) return null;
-          
+
           return {
             table: table as HTMLTableElement,
             row: row as HTMLTableRowElement,
-            cell: cell as HTMLTableCellElement
+            cell: cell as HTMLTableCellElement,
           };
         };
-        
+
         const tableElements = findTableElements(target);
-        
+
         if (tableElements) {
-          console.log("Table cell selected:", { 
-            table: tableElements.table, 
-            row: tableElements.row, 
-            cell: tableElements.cell,
-            cellIndex: tableElements.cell.cellIndex,
-            rowIndex: tableElements.row.rowIndex
-          });
-          
           // Store a reference to the selected table elements
           setSelectedTableElement(tableElements);
         }
@@ -1259,7 +1434,7 @@ export default function Editor({
     };
 
     // Add this variable for tracking hover timeout
-    let hoverTimeout: number | null = null;
+    let hoverTimeout: NodeJS.Timeout | null = null;
 
     // Update the handleMouseMove function to debounce the hover detection
     const handleMouseMove = (e: MouseEvent) => {
@@ -1269,7 +1444,8 @@ export default function Editor({
         // Calculate how far we've moved from the starting position
         const deltaX = e.clientX - resizeStartPosition.x;
         const deltaY = e.clientY - resizeStartPosition.y;
-        const aspectRatio = resizeStartDimensions.width / resizeStartDimensions.height;
+        const aspectRatio =
+          resizeStartDimensions.width / resizeStartDimensions.height;
 
         // Calculate new width based on the resize handle being used
         let newWidth = resizeStartDimensions.width;
@@ -1296,18 +1472,24 @@ export default function Editor({
             break;
           case "top":
             // For top handle, maintain aspect ratio based on vertical movement
-            newWidth = Math.max(resizeStartDimensions.width - deltaY * aspectRatio, 50);
+            newWidth = Math.max(
+              resizeStartDimensions.width - deltaY * aspectRatio,
+              50
+            );
             break;
           case "bottom":
             // For bottom handle, maintain aspect ratio based on vertical movement
-            newWidth = Math.max(resizeStartDimensions.width + deltaY * aspectRatio, 50);
+            newWidth = Math.max(
+              resizeStartDimensions.width + deltaY * aspectRatio,
+              50
+            );
             break;
         }
 
         // Set a percentage-based width for more predictable resizing
         const containerWidth = editorRef.current?.clientWidth || 1;
         const widthPercentage = (newWidth / containerWidth) * 100;
-        
+
         // Update the image with percentage-based width
         selectedImageElement.style.width = `${widthPercentage}%`;
         selectedImageElement.style.height = "auto"; // Maintain aspect ratio
@@ -1328,20 +1510,20 @@ export default function Editor({
           if (hoverTimeout) {
             clearTimeout(hoverTimeout);
           }
-          
+
           // Set the image element immediately
           setSelectedImageElement(target as HTMLImageElement);
-          
+
           // But add a small delay before showing handles to prevent flickering
           hoverTimeout = setTimeout(() => {
             addResizeHandles();
           }, 100);
-        } else if (target.className !== 'resize-handle') {
+        } else if (target.className !== "resize-handle") {
           // When moving away from image and not onto a handle, set a timeout to hide handles
           if (hoverTimeout) {
             clearTimeout(hoverTimeout);
           }
-          
+
           hoverTimeout = setTimeout(() => {
             // Only hide if we're not currently resizing
             if (!resizing) {
@@ -1461,13 +1643,15 @@ export default function Editor({
 
     const updateResizeHandlePositions = () => {
       if (selectedImageElement && editorRef.current && resizeHandlesVisible) {
-        const handleContainer = document.querySelector('.resize-handles-container') as HTMLElement;
-        
+        const handleContainer = document.querySelector(
+          ".resize-handles-container"
+        ) as HTMLElement;
+
         if (handleContainer) {
           // Get updated positions
           const imageRect = selectedImageElement.getBoundingClientRect();
           const editorRect = editorRef.current.getBoundingClientRect();
-          
+
           // Update container position
           handleContainer.style.top = `${
             imageRect.top - editorRect.top + editorRef.current.scrollTop
@@ -1516,6 +1700,20 @@ export default function Editor({
       };
       editorRef.current.addEventListener("scroll", handleEditorScroll);
 
+      // Add context menu event listener for images
+      const handleImageContextMenu = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.tagName === "IMG") {
+          e.preventDefault();
+          setSelectedImageElement(target as HTMLImageElement);
+          setImageContextMenuAnchorEl(target);
+        }
+      };
+
+      if (editorRef.current) {
+        editorRef.current.addEventListener("contextmenu", handleImageContextMenu);
+      }
+
       // Return cleanup function
       return () => {
         // Create a copy of the ref value to handle the cleanup properly
@@ -1531,14 +1729,17 @@ export default function Editor({
         document.removeEventListener("mouseup", handleMouseUp);
         document.removeEventListener("selectionchange", handleSelectionChange);
         window.removeEventListener("resize", handleWindowResize);
-        
+
         // Also clear any pending timeouts
         if (hoverTimeout) {
           clearTimeout(hoverTimeout);
         }
+        if (editorRef.current) {
+          editorRef.current.removeEventListener("contextmenu", handleImageContextMenu);
+        }
       };
     }
-  // Add the new dependency
+    // Add the new dependency
   }, [
     resizing,
     selectedImageElement,
@@ -1552,7 +1753,7 @@ export default function Editor({
     handleUnderline,
     handleLink,
     updateContent,
-    checkFormatStatus // Add the new function as a dependency
+    checkFormatStatus, // Add the new function as a dependency
   ]);
 
   const handleImageResize = (width: string) => {
@@ -1621,21 +1822,25 @@ export default function Editor({
   // Add this function to verify if the table selection exists and is valid
   const verifyTableSelection = (): boolean => {
     // First check if table elements exist
-    if (!selectedTableElement.table || !selectedTableElement.row || !selectedTableElement.cell) {
+    if (
+      !selectedTableElement.table ||
+      !selectedTableElement.row ||
+      !selectedTableElement.cell
+    ) {
       console.warn("No table element selected!");
       return false;
     }
-    
+
     // Then verify that table elements are still connected to DOM
     const isTableInDOM = document.contains(selectedTableElement.table);
     const isRowInDOM = document.contains(selectedTableElement.row);
     const isCellInDOM = document.contains(selectedTableElement.cell);
-    
+
     if (!isTableInDOM || !isRowInDOM || !isCellInDOM) {
       console.warn("Table elements not in DOM anymore!");
       return false;
     }
-    
+
     return true;
   };
 
@@ -1753,29 +1958,32 @@ export default function Editor({
   };
 
   // Add this after the verifyTableSelection function
-  const ensureTableBodyExists = (table: HTMLTableElement): HTMLTableSectionElement => {
+  const ensureTableBodyExists = (
+    table: HTMLTableElement
+  ): HTMLTableSectionElement => {
     // Check if the table already has a tbody
-    let tbody = table.querySelector('tbody');
-    
+    let tbody = table.querySelector("tbody");
+
     // If no tbody exists, create one and move all rows (except those in thead) to it
     if (!tbody) {
-      tbody = document.createElement('tbody');
-      
+      tbody = document.createElement("tbody");
+
       // Get all direct tr children of the table that aren't in a thead
       const directRows = Array.from(table.children).filter(
-        child => child.tagName === 'TR' && 
-        (!child.parentElement || child.parentElement.tagName !== 'THEAD')
+        (child) =>
+          child.tagName === "TR" &&
+          (!child.parentElement || child.parentElement.tagName !== "THEAD")
       ) as HTMLElement[];
-      
+
       // Move these rows to the tbody
-      directRows.forEach(row => {
+      directRows.forEach((row) => {
         tbody!.appendChild(row);
       });
-      
+
       // Add the tbody to the table
       table.appendChild(tbody);
     }
-    
+
     return tbody as HTMLTableSectionElement;
   };
 
@@ -1792,7 +2000,7 @@ export default function Editor({
     return () => {
       // Cleanup
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Add back the highlight color handling functions
@@ -1937,11 +2145,11 @@ export default function Editor({
     if (editorRef.current) {
       editorRef.current.focus();
     }
-    
+
     // Save both selection methods for better reliability
     saveSelection();
     saveSelectionRange();
-    
+
     // Then open the emoji dialog
     setEmojiDialogAnchorEl(event.currentTarget);
     setEmojiDialogOpen(true);
@@ -1957,31 +2165,31 @@ export default function Editor({
   const handleEmojiSelect = (emoji: string) => {
     // First try with our manual selection restoration
     if (restoreSelectionRange()) {
-      document.execCommand('insertText', false, emoji);
+      document.execCommand("insertText", false, emoji);
       updateContent();
       return;
     }
-    
+
     // Then try with the React-managed selection
     if (restoreSelection()) {
-      document.execCommand('insertText', false, emoji);
+      document.execCommand("insertText", false, emoji);
       updateContent();
       return;
     }
-    
+
     // Last resort: if we can't restore the selection, insert at end of editor
     if (editorRef.current) {
       // Focus on the editor first
       editorRef.current.focus();
-      
+
       // If the editor is empty or has only empty paragraphs, clear it first
       if (!editorRef.current.textContent?.trim()) {
-        editorRef.current.innerHTML = '';
+        editorRef.current.innerHTML = "";
       }
-      
+
       // Create a text node with the emoji
       const emojiNode = document.createTextNode(emoji);
-      
+
       // Insert at cursor position if possible, otherwise at the end
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
@@ -1990,7 +2198,7 @@ export default function Editor({
           const range = selection.getRangeAt(0);
           range.deleteContents();
           range.insertNode(emojiNode);
-          
+
           // Move cursor after the inserted emoji
           range.setStartAfter(emojiNode);
           range.setEndAfter(emojiNode);
@@ -2005,7 +2213,7 @@ export default function Editor({
         // No selection, append to the end
         editorRef.current.appendChild(emojiNode);
       }
-      
+
       updateContent();
     }
   };
@@ -2022,7 +2230,7 @@ export default function Editor({
     // Convert files from the dialog to attachment objects
     const newAttachments: AttachmentFile[] = files.map((file) => {
       let fileUrl;
-      
+
       // For images, we can use the previewUrl if available
       if (file.previewUrl) {
         fileUrl = file.previewUrl;
@@ -2031,7 +2239,7 @@ export default function Editor({
         // In a real application, this would be a URL to the uploaded file on your server
         fileUrl = URL.createObjectURL(file);
       }
-      
+
       return {
         id: file.id,
         name: file.name,
@@ -2040,10 +2248,13 @@ export default function Editor({
         url: fileUrl,
       };
     });
-    
+
     // Store the new attachments in state
-    setAttachments((prevAttachments) => [...prevAttachments, ...newAttachments]);
-    
+    setAttachments((prevAttachments) => [
+      ...prevAttachments,
+      ...newAttachments,
+    ]);
+
     // Insert the attachments into the editor
     insertAttachmentsIntoEditor(newAttachments);
   };
@@ -2051,48 +2262,52 @@ export default function Editor({
   const handleRemoveAttachment = (attachmentId: string) => {
     setAttachments((prevAttachments) => {
       // Filter out the attachment to be removed
-      return prevAttachments.filter((attachment) => attachment.id !== attachmentId);
+      return prevAttachments.filter(
+        (attachment) => attachment.id !== attachmentId
+      );
     });
-    
+
     // Find and remove the attachment span from the editor
     if (editorRef.current) {
       const attachmentElement = editorRef.current.querySelector(
         `a[data-attachment-id="${attachmentId}"]`
       );
-      
+
       if (attachmentElement) {
         // Get the parent span that contains both icon and link
         const parentSpan = attachmentElement.parentElement;
-        if (parentSpan && parentSpan.tagName === 'SPAN') {
+        if (parentSpan && parentSpan.tagName === "SPAN") {
           // Remove the entire attachment span
           parentSpan.remove();
         } else {
           // Fallback to just removing the link
           attachmentElement.remove();
         }
-        
+
         // Update content to reflect the removal
         updateContent();
       }
     }
   };
 
-  const insertAttachmentsIntoEditor = (attachmentsToInsert: AttachmentFile[]) => {
+  const insertAttachmentsIntoEditor = (
+    attachmentsToInsert: AttachmentFile[]
+  ) => {
     if (!editorRef.current) {
       return;
     }
-    
+
     // Focus the editor to ensure we have focus
     editorRef.current.focus();
-    
+
     // Try to get the current selection
     const selection = window.getSelection();
     let range: Range | null = null;
-    
+
     // Get current selection - we need to be careful with selection handling
     if (selection && selection.rangeCount > 0) {
       range = selection.getRangeAt(0);
-      
+
       // Verify the selection is within our editor
       let inEditor = false;
       let node: Node | null = range.commonAncestorContainer;
@@ -2107,17 +2322,17 @@ export default function Editor({
           break;
         }
       }
-      
+
       // If selection is not in editor, we need to create a new range
       if (!inEditor) {
         range = null;
       }
     }
-    
+
     // If no valid range exists, create one at the current cursor position or at the end
     if (!range) {
       range = document.createRange();
-      
+
       // Try to place cursor at end of current content
       if (editorRef.current.lastChild) {
         range.selectNodeContents(editorRef.current.lastChild);
@@ -2126,51 +2341,51 @@ export default function Editor({
         range.selectNodeContents(editorRef.current);
         range.collapse(false); // Collapse to end
       }
-      
+
       // Apply the new range to selection
       if (selection) {
         selection.removeAllRanges();
         selection.addRange(range);
       }
     }
-    
+
     // Helper function to get file type icon
     const getFileTypeIcon = (fileType: string): string => {
-      const type = fileType.split('/')[0];
+      const type = fileType.split("/")[0];
       switch (type) {
-        case 'image':
-          return '🖼️';
-        case 'application':
-          return fileType.includes('pdf') ? '📄' : '📎';
-        case 'audio':
-          return '🔊';
-        case 'video':
-          return '🎬';
-        case 'text':
-          return '📝';
+        case "image":
+          return "🖼️";
+        case "application":
+          return fileType.includes("pdf") ? "📄" : "📎";
+        case "audio":
+          return "🔊";
+        case "video":
+          return "🎬";
+        case "text":
+          return "📝";
         default:
-          return '📎';
+          return "📎";
       }
     };
-    
+
     // Create each attachment as a simple text with a link
     // We'll use a document fragment to batch our insertions
     const fragment = document.createDocumentFragment();
     let lastElement: HTMLElement | null = null;
-    
+
     attachmentsToInsert.forEach((attachment) => {
       // Create a span to hold the icon and link
-      const attachmentSpan = document.createElement('span');
-      attachmentSpan.style.display = 'inline-flex';
-      attachmentSpan.style.alignItems = 'center';
-      attachmentSpan.style.marginRight = '5px';
-      
+      const attachmentSpan = document.createElement("span");
+      attachmentSpan.style.display = "inline-flex";
+      attachmentSpan.style.alignItems = "center";
+      attachmentSpan.style.marginRight = "5px";
+
       // Create icon element
-      const iconSpan = document.createElement('span');
+      const iconSpan = document.createElement("span");
       iconSpan.textContent = getFileTypeIcon(attachment.type);
-      iconSpan.style.marginRight = '4px';
-      iconSpan.style.fontSize = '1.1em';
-      
+      iconSpan.style.marginRight = "4px";
+      iconSpan.style.fontSize = "1.1em";
+
       // Create link element for the attachment
       const linkElement = document.createElement("a");
       linkElement.href = attachment.url;
@@ -2180,23 +2395,25 @@ export default function Editor({
       linkElement.dataset.attachmentId = attachment.id; // Store the attachment ID
       linkElement.download = attachment.name; // Add download attribute to make it downloadable
       linkElement.title = "Click to download, double-click to remove"; // Add tooltip for clarity
-      
+
       // Add specific styling for attachment links
       linkElement.style.color = theme.palette.primary.main;
       linkElement.style.textDecoration = "none";
       linkElement.style.fontWeight = "500";
-      
+
       // Add click event to handle file download
-      linkElement.addEventListener('click', (e) => {
+      linkElement.addEventListener("click", (e) => {
         // We need to prevent the default to handle the download manually
         // to ensure it works across different browsers
         e.preventDefault();
-        
+
         // Find the attachment in our state
-        const attachmentToDownload = attachments.find(a => a.id === attachment.id);
+        const attachmentToDownload = attachments.find(
+          (a: AttachmentFile) => a.id === attachment.id
+        );
         if (attachmentToDownload) {
           // Create a download link
-          const downloadLink = document.createElement('a');
+          const downloadLink = document.createElement("a");
           downloadLink.href = attachmentToDownload.url;
           downloadLink.download = attachmentToDownload.name;
           document.body.appendChild(downloadLink);
@@ -2204,39 +2421,39 @@ export default function Editor({
           document.body.removeChild(downloadLink);
         }
       });
-      
+
       // Add double-click event to remove the attachment
-      linkElement.addEventListener('dblclick', (e) => {
+      linkElement.addEventListener("dblclick", (e) => {
         e.preventDefault();
         handleRemoveAttachment(attachment.id);
       });
-      
+
       // Assemble the attachment span
       attachmentSpan.appendChild(iconSpan);
       attachmentSpan.appendChild(linkElement);
-      
+
       // Add to fragment
       fragment.appendChild(attachmentSpan);
-      
+
       // Keep track of the last element for cursor positioning
       lastElement = attachmentSpan;
     });
-    
+
     // Insert the fragment at the current cursor position
     if (selection && range) {
       // We won't delete the content for better insertion
       // range.deleteContents();
       range.insertNode(fragment);
-      
+
       // Add a space after the last attachment
       const spaceNode = document.createTextNode(" ");
-      
+
       // Position range after the last attachment
       if (lastElement) {
         range.setStartAfter(lastElement);
         range.setEndAfter(lastElement);
         range.insertNode(spaceNode);
-        
+
         // Position cursor after the space
         range.setStartAfter(spaceNode);
         range.setEndAfter(spaceNode);
@@ -2244,7 +2461,7 @@ export default function Editor({
         selection.addRange(range);
       }
     }
-    
+
     // Update content to reflect the changes
     updateContent();
   };
@@ -2253,6 +2470,31 @@ export default function Editor({
   // Add event listener to update format status when selection changes
   const handleSelectionChange = () => {
     checkFormatStatus();
+  };
+
+  const handleMenuClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleSend = () => {
+    if (editorRef.current) {
+      if (onSend) {
+        onSend();
+      }
+    }
+  };
+
+  // Add this function to handle image context menu close
+  const handleImageContextMenuClose = () => {
+    setImageContextMenuAnchorEl(null);
   };
 
   return (
@@ -2278,44 +2520,60 @@ export default function Editor({
           }}
         >
           <Tooltip title="Bold">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={handleBold}
               color={activeFormats.bold ? "primary" : "default"}
-              sx={activeFormats.bold ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+              sx={
+                activeFormats.bold
+                  ? { backgroundColor: theme.palette.primary.light + "20" }
+                  : {}
+              }
             >
               <FormatBoldIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Italic">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={handleItalic}
               color={activeFormats.italic ? "primary" : "default"}
-              sx={activeFormats.italic ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+              sx={
+                activeFormats.italic
+                  ? { backgroundColor: theme.palette.primary.light + "20" }
+                  : {}
+              }
             >
               <FormatItalicIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Underline">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={handleUnderline}
               color={activeFormats.underline ? "primary" : "default"}
-              sx={activeFormats.underline ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+              sx={
+                activeFormats.underline
+                  ? { backgroundColor: theme.palette.primary.light + "20" }
+                  : {}
+              }
             >
               <FormatUnderlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Strikethrough">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={handleStrikethrough}
               color={activeFormats.strikethrough ? "primary" : "default"}
-              sx={activeFormats.strikethrough ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+              sx={
+                activeFormats.strikethrough
+                  ? { backgroundColor: theme.palette.primary.light + "20" }
+                  : {}
+              }
             >
               <FormatStrikethroughIcon fontSize="small" />
             </IconButton>
@@ -2336,11 +2594,15 @@ export default function Editor({
           </Tooltip>
 
           <Tooltip title="Quote">
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               onClick={handleQuote}
               color={activeFormats.quote ? "primary" : "default"}
-              sx={activeFormats.quote ? { backgroundColor: theme.palette.primary.light + '20' } : {}}
+              sx={
+                activeFormats.quote
+                  ? { backgroundColor: theme.palette.primary.light + "20" }
+                  : {}
+              }
             >
               <FormatQuoteIcon fontSize="small" />
             </IconButton>
@@ -2452,14 +2714,24 @@ export default function Editor({
               </ListItemIcon>
               <ListItemText>Horizontal Rule</ListItemText>
             </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleClearAll}>
-              <ListItemIcon>
-                <DeleteIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Clear All</ListItemText>
-            </MenuItem>
           </Menu>
+
+          <Box sx={{ flexGrow: 1 }} /> {/* Add this to push the Clear All button to the right */}
+          
+          <Tooltip title="Clear All">
+            <IconButton 
+              size="small" 
+              onClick={handleClearAll}
+              color="error"
+              sx={{ 
+                '&:hover': { 
+                  backgroundColor: theme.palette.error.light + '20'
+                }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
 
           <Menu
             anchorEl={fontSizeMenuAnchorEl}
@@ -2545,7 +2817,7 @@ export default function Editor({
           ref={editorRef}
           data-placeholder={placeholder}
           isExpanded={isExpanded}
-          fontSize={typeof fontSize === 'number' ? `${fontSize}px` : fontSize}
+          fontSize={typeof fontSize === "number" ? `${fontSize}px` : fontSize}
           fontFamily={fontFamily}
           onInput={updateContent}
           sx={{
@@ -2556,27 +2828,36 @@ export default function Editor({
         <Box
           sx={{
             position: "absolute",
-            bottom: "8px",
             right: "8px",
             display: "flex",
             gap: "4px",
+            ...(isExpanded
+              ? {
+                  bottom: "8px",
+                }
+              : {
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }),
           }}
         >
           <Tooltip title="Expand/Collapse">
             <IconButton
               size="small"
               onClick={toggleExpanded}
-              sx={{ backgroundColor: theme.palette.background.paper + '80' }}
+              sx={{ backgroundColor: theme.palette.background.paper + "80" }}
             >
               {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Attach">
-            <IconButton size="small" onClick={handleAttachment}>
-              <AttachFileIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {showAttachments && (
+            <Tooltip title="Attach">
+              <IconButton size="small" onClick={handleAttachment}>
+                <AttachFileIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title="Send">
             <IconButton size="small" color="primary" onClick={handleSend}>
@@ -2660,6 +2941,61 @@ export default function Editor({
         onClose={() => setAttachmentDialogOpen(false)}
         onConfirm={handleAttachmentConfirm}
       />
+
+      {/* Add the image context menu */}
+      <Menu
+        anchorEl={imageContextMenuAnchorEl}
+        open={imageContextMenuOpen}
+        onClose={handleImageContextMenuClose}
+      >
+        <MenuItem onClick={() => {
+          handleQuickAlign("left");
+          handleImageContextMenuClose();
+        }}>
+          <ListItemIcon>
+            <FormatAlignLeftIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Align Left</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleQuickAlign("center");
+          handleImageContextMenuClose();
+        }}>
+          <ListItemIcon>
+            <FormatAlignCenterIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Align Center</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleQuickAlign("right");
+          handleImageContextMenuClose();
+        }}>
+          <ListItemIcon>
+            <FormatAlignRightIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Align Right</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => {
+          handleOpenImageOptions();
+          handleImageContextMenuClose();
+        }}>
+          <ListItemIcon>
+            <CropIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Image Options</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => {
+          handleImageDelete();
+          handleImageContextMenuClose();
+        }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Delete Image</ListItemText>
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
